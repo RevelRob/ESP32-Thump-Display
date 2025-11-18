@@ -32,6 +32,7 @@ void wakeFromSleep() {
 
     loadBrightness();
     loadStandbySetting();
+    loadMirrorSetting();
     
     initializeDisplay();
     setupBLE();

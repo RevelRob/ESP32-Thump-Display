@@ -13,6 +13,10 @@ void adjustBrightness(int delta);
 void loadStandbySetting();
 void saveStandbySetting();
 
+// Mirror
+void loadMirrorSetting();
+void saveMirrorSetting();
+
 // Menu Navigation
 void enterSettingsMenu();
 void exitSettingsMenu();

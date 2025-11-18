@@ -44,9 +44,10 @@ const int MAX_BRIGHTNESS = 100;
 const int BRIGHTNESS_STEP = 10;
 
 // EEPROM addresses
-const int EEPROM_SIZE = 2;
+const int EEPROM_SIZE = 3;
 const int BRIGHTNESS_ADDR = 0;
 const int STANDBY_ADDR = 1;
+const int MIRROR_ADDR = 2;
 
 // ============================================================================
 // ENUMS & STRUCTS
@@ -112,6 +113,11 @@ extern const int NUM_BRIGHTNESS_OPTIONS;
 extern const char* standbyOptions[];
 extern const int NUM_STANDBY_OPTIONS;
 extern const unsigned long standbyValues[];
+
+// Mirror Setting
+extern bool mirrorMessages;
+extern const char* mirrorOptions[];
+extern const int NUM_MIRROR_OPTIONS;
 
 // Button states
 extern int lastButton1State;

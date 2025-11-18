@@ -75,7 +75,7 @@ const int INFO_MENU_VISIBLE_ITEMS = 3;    // For the main info screen
 // Settings items
 const char* settingsItems[] = {
   "Brightness",
-  "Auto Standby", 
+  "Auto Standby",
   "Rotate Screen",
   "Mirror Screen",
   "Button Actions",
@@ -101,6 +101,12 @@ const unsigned long standbyValues[] = {
   10000, 30000, 60000, 300000, 600000, 900000, 1200000,
   1500000, 1800000, 2700000, 3600000, 7200000
 };
+
+// Mirror options
+const char* mirrorOptions[] = {"Off", "On"};
+const int NUM_MIRROR_OPTIONS = 2;
+bool mirrorMessages = false;
+
 
 // ============================================================================ 
 void clearAllMessages() {
@@ -156,6 +162,7 @@ void setup() {
     // Load settings from EEPROM
     loadBrightness();
     loadStandbySetting();
+    loadMirrorSetting();
 
     // Initialize display
     initializeDisplay();

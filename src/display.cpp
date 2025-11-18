@@ -163,14 +163,13 @@ void drawMainMenu() {
         tft.setFreeFont(FONT_SANS_12);
 
         if (i == mainMenuSelection) {
-            tft.setTextColor(TFT_BLACK, TFT_WHITE);
-            int textWidth = tft.textWidth(mainMenuItems[i]);
-            tft.fillRect(10, y - 16, textWidth + 8, 20, TFT_WHITE);
-            tft.setCursor(14, y);
+            // Highlighted item is green
+            tft.setTextColor(TFT_GREEN, TFT_BLACK);
         } else {
+            // Non-highlighted items are white
             tft.setTextColor(TFT_WHITE, TFT_BLACK);
-            tft.setCursor(10, y);
         }
+        tft.setCursor(10, y);
         tft.print(mainMenuItems[i]);
     }
 }
@@ -216,8 +215,8 @@ void displayCurrentMessage() {
 
     // Define positions and dimensions
     int topY = HEADER_HEIGHT + 16; // Pushed up to be right below the header
-    int bottomY = tft.height() - 8; // Pushed down to the bottom of the display
-    int contentStartY = topY + 28; // Messages start right under the top nav line
+    int bottomY = tft.height() - 6; // Pushed down to the bottom of the display
+    int contentStartY = topY + 8; // Position sprite just below the top nav text
 
     // Draw navigation hints
     tft.setTextColor(TFT_CYAN, TFT_BLACK); // Changed to CYAN to match other nav hints
@@ -245,39 +244,40 @@ void displayCurrentMessage() {
     tft.print(bottomRightText);
 
 
+    // Create a sprite for the message content area
+    int contentWidth = tft.width();
+    int contentHeight = tft.height() - contentStartY - 20;
+    TFT_eSprite messageSprite = TFT_eSprite(&tft);
+    messageSprite.createSprite(contentWidth, contentHeight);
+    messageSprite.fillSprite(TFT_BLACK); // Revert background to black
+
+    // Set text properties for the sprite
+    messageSprite.setTextColor(TFT_GREEN, TFT_BLACK);
+
     if (totalMessages == 0) {
-        // Display "Waiting for messages..."
-        tft.setFreeFont(FONT_SANS_9);
-        tft.setTextColor(TFT_GREEN, TFT_BLACK);
-        tft.setCursor(5, contentStartY);
-        tft.println("Waiting for messages...");
+        messageSprite.setFreeFont(FONT_SANS_9);
+        // Set cursor y to font height to prevent clipping at the top
+        messageSprite.setCursor(5, messageSprite.fontHeight() - 8);
+        messageSprite.println("Waiting for messages..."); // println still works with datum
     } else {
         if (displayMessageIndex < 0) displayMessageIndex = 0;
         if (displayMessageIndex >= totalMessages) displayMessageIndex = totalMessages - 1;
 
         String message = messageHistory[displayMessageIndex];
-        Serial.print("Displaying message ");
-        Serial.print(displayMessageIndex + 1);
-        Serial.print("/");
-        Serial.print(totalMessages);
-        Serial.print(": '");
-        Serial.print(message);
-        Serial.println("'");
 
         // Determine the best font size
-        const GFXfont* font = FONT_SANS_BOLD_12;
-        if (!doesTextFit(message, font, tft.width() - 10, tft.height() - contentStartY - 20)) {
+        const GFXfont* font = FONT_SANS_9; // Default to smallest
+        if (doesTextFit(message, FONT_SANS_BOLD_12, contentWidth - 10, contentHeight)) {
+            font = FONT_SANS_BOLD_12;
+        } else if (doesTextFit(message, FONT_SANS_12, contentWidth - 10, contentHeight)) {
             font = FONT_SANS_12;
-            if (!doesTextFit(message, font, tft.width() - 10, tft.height() - contentStartY - 20)) {
-                font = FONT_SANS_9;
             }
-        }
 
-        tft.setFreeFont(font);
-        tft.setTextColor(TFT_GREEN, TFT_BLACK); // Changed message text color to GREEN
-        tft.setCursor(5, contentStartY);
+        messageSprite.setFreeFont(font);
+        // Set cursor y to font height to prevent clipping at the top
+        messageSprite.setCursor(5, messageSprite.fontHeight() - 8);
 
-        // Simple word wrap implementation
+        // Simple word wrap implementation onto the sprite
         String currentLine = "";
         String word = "";
         for (int i = 0; i < message.length(); i++) {
@@ -288,15 +288,15 @@ void displayCurrentMessage() {
                 }
 
                 String testLine = currentLine + (currentLine == "" ? word : " " + word);
-                if (tft.textWidth(testLine.c_str()) > tft.width() - 10 && currentLine != "") {
-                    tft.println(currentLine);
+                if (messageSprite.textWidth(testLine.c_str()) > contentWidth - 10 && currentLine != "") {
+                    messageSprite.println(currentLine);
                     currentLine = word;
                 } else {
                     currentLine = testLine;
                 }
                 word = "";
                 if (c == '\n') {
-                    tft.println(currentLine);
+                    messageSprite.println(currentLine);
                     currentLine = "";
                 }
             } else {
@@ -304,14 +304,28 @@ void displayCurrentMessage() {
             }
         }
         if (currentLine != "") {
-            tft.println(currentLine);
+            messageSprite.println(currentLine);
         }
     }
+
+    // Push the sprite to the screen (mirrored or normal)
+    if (mirrorMessages) {
+        messageSprite.pushSprite(0, contentStartY, true); // The 'true' flag enables mirroring
+    } else {
+        messageSprite.pushSprite(0, contentStartY);
+    }
+
+    // Delete the sprite to free up memory
+    messageSprite.deleteSprite();
 }
 
 bool doesTextFit(String message, const GFXfont* font, int maxWidth, int maxHeight) {
-    tft.setFreeFont(font);
-    int lineHeight = tft.fontHeight();
+    // This function now uses a temporary sprite to measure text, to avoid screen flicker
+    TFT_eSprite tempSprite = TFT_eSprite(&tft);
+    tempSprite.createSprite(1, 1); // Minimal sprite
+    tempSprite.setFreeFont(font);
+
+    int lineHeight = tempSprite.fontHeight();
     int currentY = 0;
     String currentLine = "";
     String word = "";
@@ -325,12 +339,13 @@ bool doesTextFit(String message, const GFXfont* font, int maxWidth, int maxHeigh
             }
 
             String testLine = currentLine + (currentLine == "" ? word : " " + word);
-            int textWidth = tft.textWidth(testLine.c_str());
+            int textWidth = tempSprite.textWidth(testLine.c_str());
 
             if (textWidth > maxWidth && currentLine != "") {
                 currentLine = word;
                 currentY += lineHeight;
                 if (currentY + lineHeight > maxHeight) {
+                    tempSprite.deleteSprite();
                     return false;
                 }
             } else {
@@ -347,6 +362,7 @@ bool doesTextFit(String message, const GFXfont* font, int maxWidth, int maxHeigh
         currentY += lineHeight;
     }
 
+    tempSprite.deleteSprite();
     return currentY <= maxHeight;
 }
 
@@ -371,33 +387,37 @@ void drawSettingsMenu() {
     tft.setCursor(tft.width() - selectWidth - 5, tft.height() - 10);
     tft.print(selectHint);
 
-    // Update scroll position
-    if (settingsMenuIndex < settingsScrollOffset) {
-        settingsScrollOffset = settingsMenuIndex;
-    } else if (settingsMenuIndex >= settingsScrollOffset + 5) { // MAIN_MENU_VISIBLE_ITEMS is 5
-        settingsScrollOffset = settingsMenuIndex - 5 + 1;
+    // New 3-phase scrolling logic
+    const int VISIBLE_ITEMS = 5;
+    const int PIN_ROW = VISIBLE_ITEMS / 2; // Middle row (index 2 for 5 items)
+
+    if (settingsMenuIndex < PIN_ROW) {
+        // Phase 1: Highlight moves down from top
+        settingsScrollOffset = 0;
+    } else if (settingsMenuIndex >= (NUM_SETTINGS_ITEMS - (VISIBLE_ITEMS - PIN_ROW))) {
+        // Phase 3: Highlight moves down at the bottom
+        settingsScrollOffset = NUM_SETTINGS_ITEMS - VISIBLE_ITEMS;
+    } else {
+        // Phase 2: Highlight is pinned to the middle, list scrolls
+        settingsScrollOffset = settingsMenuIndex - PIN_ROW;
     }
 
     // Draw settings items at the top of content area - adjusted spacing
     int startY = CONTENT_START_Y + 15;  // Moved up to just below header
     int lineHeight = 18;              // Reduced line height to fit 5 items
 
-    for (int i = settingsScrollOffset; i < min(NUM_SETTINGS_ITEMS, settingsScrollOffset + 5); i++) {
+    for (int i = settingsScrollOffset; i < min(NUM_SETTINGS_ITEMS, settingsScrollOffset + VISIBLE_ITEMS); i++) {
         int y = startY + ((i - settingsScrollOffset) * lineHeight);
 
         tft.setFreeFont(FONT_SANS_9);
 
         if (i == settingsMenuIndex) {
-            // Highlight only the text (not the whole line)
-            tft.setTextColor(TFT_BLACK, TFT_WHITE);
-            int textWidth = tft.textWidth(settingsItems[i]);
-            tft.fillRect(10, y - 12, textWidth + 4, 16, TFT_WHITE); // Reduced height
-            tft.setCursor(12, y);
+            tft.setTextColor(TFT_GREEN, TFT_BLACK);
         } else {
             tft.setTextColor(TFT_WHITE, TFT_BLACK);
-            tft.setCursor(10, y);
         }
 
+        tft.setCursor(10, y);
         tft.print(settingsItems[i]);
     }
 }
@@ -410,6 +430,7 @@ void drawSubMenu() {
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
     tft.setFreeFont(FONT_SANS_BOLD_12);
     tft.setCursor(5, HEADER_HEIGHT + 25);
+    
     tft.print(settingsItems[settingsMenuIndex]);
 
     // Draw navigation hints
@@ -425,53 +446,68 @@ void drawSubMenu() {
     tft.setCursor(tft.width() - selectWidth - 5, tft.height() - 10);
     tft.print(selectHint);
 
-    // Update scroll position
-    if (subMenuIndex < subMenuScrollOffset) {
-        subMenuScrollOffset = subMenuIndex;
-    } else if (subMenuIndex >= subMenuScrollOffset + 3) { // SUB_MENU_VISIBLE_ITEMS is 3
-        subMenuScrollOffset = subMenuIndex - 3 + 1;
+    // Default start position for options
+    int startY = HEADER_HEIGHT + 50;
+
+    // Add description for Mirror Screen sub-menu
+    if (settingsMenuIndex == 3) { // Mirror Screen
+        tft.setFreeFont(FONT_SANS_9);
+        tft.setCursor(5, startY);
+        tft.print("Mirror messages received");
+        startY += 20; // Move options down to make space for the description
+    }
+
+    // New 3-phase scrolling logic for sub-menus
+    const int SUB_VISIBLE_ITEMS = 3;
+    const int SUB_PIN_ROW = SUB_VISIBLE_ITEMS / 2; // Middle row (index 1 for 3 items)
+    int num_options = 0;
+    if (settingsMenuIndex == 0) num_options = NUM_BRIGHTNESS_OPTIONS;
+    else if (settingsMenuIndex == 1) num_options = NUM_STANDBY_OPTIONS;
+    else if (settingsMenuIndex == 3) num_options = NUM_MIRROR_OPTIONS;
+
+    // Scrolling logic
+    if (num_options <= SUB_VISIBLE_ITEMS) {
+        // Simple case: The list is short and doesn't need to scroll.
+        subMenuScrollOffset = 0;
+    } else {
+        // Use 3-phase scrolling for lists that are longer than the visible area.
+        if (subMenuIndex < SUB_PIN_ROW) {
+            // Phase 1: Highlight moves down from top
+            subMenuScrollOffset = 0;
+        } else if (subMenuIndex >= (num_options - (SUB_VISIBLE_ITEMS - SUB_PIN_ROW))) {
+            // Phase 3: Highlight moves down at the bottom
+            subMenuScrollOffset = num_options - SUB_VISIBLE_ITEMS;
+        } else {
+            // Phase 2: Highlight is pinned to the middle, list scrolls
+            subMenuScrollOffset = subMenuIndex - SUB_PIN_ROW;
+        }
     }
 
     // Draw submenu items with adjusted spacing
-    int startY = HEADER_HEIGHT + 50;
-    int lineHeight = 20; // Keep original spacing for sub-menus
+    int lineHeight = 20;
+
+    auto draw_items = [&](const char* items[], int count) {
+        for (int i = subMenuScrollOffset; i < min(count, subMenuScrollOffset + SUB_VISIBLE_ITEMS); i++) {
+            int y = startY + ((i - subMenuScrollOffset) * lineHeight);
+
+            tft.setFreeFont(FONT_SANS_9);
+
+            if (i == subMenuIndex) {
+                tft.setTextColor(TFT_GREEN, TFT_BLACK);
+            } else {
+                tft.setTextColor(TFT_WHITE, TFT_BLACK);
+            }
+            tft.setCursor(10, y);
+            tft.print(items[i]);
+        }
+    };
 
     if (settingsMenuIndex == 0) { // Brightness
-        for (int i = subMenuScrollOffset; i < min(NUM_BRIGHTNESS_OPTIONS, subMenuScrollOffset + 3); i++) {
-            int y = startY + ((i - subMenuScrollOffset) * lineHeight);
-
-            tft.setFreeFont(FONT_SANS_9);
-
-            if (i == subMenuIndex) {
-                tft.setTextColor(TFT_BLACK, TFT_WHITE);
-                int textWidth = tft.textWidth(brightnessOptions[i]);
-                tft.fillRect(10, y - 12, textWidth + 4, 18, TFT_WHITE);
-                tft.setCursor(12, y);
-            } else {
-                tft.setTextColor(TFT_WHITE, TFT_BLACK);
-                tft.setCursor(10, y);
-            }
-
-            tft.print(brightnessOptions[i]);
-        }
+        draw_items(brightnessOptions, NUM_BRIGHTNESS_OPTIONS);
     } else if (settingsMenuIndex == 1) { // Auto Standby
-        for (int i = subMenuScrollOffset; i < min(NUM_STANDBY_OPTIONS, subMenuScrollOffset + 3); i++) {
-            int y = startY + ((i - subMenuScrollOffset) * lineHeight);
-
-            tft.setFreeFont(FONT_SANS_9);
-
-            if (i == subMenuIndex) {
-                tft.setTextColor(TFT_BLACK, TFT_WHITE);
-                int textWidth = tft.textWidth(standbyOptions[i]);
-                tft.fillRect(10, y - 12, textWidth + 4, 18, TFT_WHITE);
-                tft.setCursor(12, y);
-            } else {
-                tft.setTextColor(TFT_WHITE, TFT_BLACK);
-                tft.setCursor(10, y);
-            }
-
-            tft.print(standbyOptions[i]);
-        }
+        draw_items(standbyOptions, NUM_STANDBY_OPTIONS);
+    } else if (settingsMenuIndex == 3) { // Mirror Screen
+        draw_items(mirrorOptions, NUM_MIRROR_OPTIONS);
     }
 }
 

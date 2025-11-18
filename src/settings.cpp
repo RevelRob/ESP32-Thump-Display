@@ -83,6 +83,35 @@ void saveStandbySetting() {
 }
 
 // ============================================================================
+// MIRROR SETTINGS
+// ============================================================================
+void loadMirrorSetting() {
+    EEPROM.begin(EEPROM_SIZE);
+    byte savedMirrorState = EEPROM.read(MIRROR_ADDR);
+    
+    if (savedMirrorState == 0 || savedMirrorState == 1) {
+        mirrorMessages = (bool)savedMirrorState;
+        Serial.print("Loaded mirror setting from EEPROM: ");
+        Serial.println(mirrorMessages ? "On" : "Off");
+    } else {
+        mirrorMessages = false; // Default to Off
+        EEPROM.write(MIRROR_ADDR, mirrorMessages); // Write default without calling saveMirrorSetting to avoid recursion
+        Serial.println("Using default mirror setting: Off");
+    }
+    EEPROM.end();
+}
+
+void saveMirrorSetting() {
+    EEPROM.begin(EEPROM_SIZE);
+    EEPROM.write(MIRROR_ADDR, mirrorMessages);
+    EEPROM.commit();
+    EEPROM.end();
+    Serial.print("Saved mirror setting to EEPROM: ");
+    Serial.println(mirrorMessages ? "On" : "Off");
+}
+
+
+// ============================================================================
 // SETTINGS MENU NAVIGATION LOGIC
 // ============================================================================
 void enterSettingsMenu() {
@@ -114,6 +143,8 @@ void enterSubMenu() {
         subMenuIndex = EEPROM.read(STANDBY_ADDR);
         if (subMenuIndex < 0 || subMenuIndex >= NUM_STANDBY_OPTIONS) subMenuIndex = 5; // Default to 15 mins
         EEPROM.end();
+    } else if (settingsMenuIndex == 3) { // Mirror Screen
+        subMenuIndex = (int)mirrorMessages;
     }
     drawSubMenu();
 }
@@ -125,11 +156,22 @@ void exitSubMenu() {
 }
 
 void cycleSubMenuOption() {
-    if (settingsMenuIndex == 0) { // Brightness
-        subMenuIndex = (subMenuIndex + 1) % NUM_BRIGHTNESS_OPTIONS;
-        setBrightness(MIN_BRIGHTNESS + (subMenuIndex * BRIGHTNESS_STEP));
-    } else if (settingsMenuIndex == 1) { // Auto Standby
-        subMenuIndex = (subMenuIndex + 1) % NUM_STANDBY_OPTIONS;
-        saveStandbySetting();
+    switch (settingsMenuIndex) {
+        case 0: // Brightness
+            subMenuIndex = (subMenuIndex + 1) % NUM_BRIGHTNESS_OPTIONS;
+            setBrightness(MIN_BRIGHTNESS + (subMenuIndex * BRIGHTNESS_STEP));
+            break;
+        case 1: // Auto Standby
+            subMenuIndex = (subMenuIndex + 1) % NUM_STANDBY_OPTIONS;
+            saveStandbySetting();
+            break;
+        case 3: // Mirror Screen
+            subMenuIndex = (subMenuIndex + 1) % NUM_MIRROR_OPTIONS;
+            mirrorMessages = (bool)subMenuIndex;
+            saveMirrorSetting();
+            break;
+        default:
+            // Do nothing for unimplemented sub-menus
+            break;
     }
 }
