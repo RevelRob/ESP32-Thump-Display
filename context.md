@@ -19,3 +19,13 @@ This file tracks the major changes and decisions made during the development of 
 ### Project Documentation
 *   **Created `README.md`:** Added a comprehensive README file detailing the project's features, hardware, usage instructions, and build process.
 *   **Created `context.md`:** Initialized this changelog to track future development history.
+
+### Major Code Refactoring
+*   **Modularized Codebase:** Broke down the monolithic `main.cpp` file into multiple, single-responsibility modules to improve organization, readability, and maintainability.
+*   **Created New Modules:**
+    *   `display`: Manages all screen drawing and UI updates.
+    *   `buttons`: Handles all user input logic.
+    *   `ble_handler`: Encapsulates all Bluetooth Low Energy functionality.
+    *   `power_management`: Contains deep sleep and battery monitoring logic.
+    *   `settings`: Manages loading, saving, and applying all user configurations.
+*   **Centralized Globals:** Introduced a `globals.h` file to declare shared variables, constants, and enums, making state management clearer across modules.
