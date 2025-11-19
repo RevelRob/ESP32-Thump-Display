@@ -104,8 +104,6 @@ extern const int NUM_SETTINGS_ITEMS;
 
 // Brightness
 extern int brightness;
-extern bool showingBrightness;
-extern bool brightnessChanged;
 extern const char* brightnessOptions[];
 extern const int NUM_BRIGHTNESS_OPTIONS;
 
@@ -128,15 +126,5 @@ extern int totalMessageHeight;
 extern const GFXfont* currentFont;
 const unsigned long SCROLL_DELAY = 50; // ms per pixel scroll
 const unsigned long SCROLL_PAUSE = 2000; // ms to pause at top/bottom
-
-// Button states
-extern int lastButton1State;
-extern int lastButton2State;
-extern unsigned long lastDebounceTime1;
-extern unsigned long lastDebounceTime2;
-extern unsigned long button1PressTime;
-extern unsigned long button2PressTime;
-extern bool button1LongPress;
-extern bool button2LongPress;
 
 #endif // GLOBALS_H

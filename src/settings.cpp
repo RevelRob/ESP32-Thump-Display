@@ -39,18 +39,12 @@ void setBrightness(int level) {
     analogWrite(4, pwmValue);
     
     if (oldBrightness != brightness) {
-        brightnessChanged = true;
+        showBrightnessChange();
     }
     
     Serial.print("Brightness set to: ");
     Serial.print(brightness);
     Serial.println("%");
-}
-
-void adjustBrightness(int delta) {
-    int newBrightness = brightness + delta;
-    setBrightness(newBrightness);
-    showBrightnessChange();
 }
 
 // ============================================================================
@@ -151,7 +145,6 @@ void enterSubMenu() {
 
 void exitSubMenu() {
     inSubMenu = false;
-    if (settingsMenuIndex == 0 && brightnessChanged) saveBrightness();
     drawSettingsMenu();
 }
 

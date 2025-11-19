@@ -2,11 +2,15 @@
 #include "display.h"
 #include "settings.h"
 
-// These are defined in main.cpp but used here for long press logic
-extern unsigned long button1PressTime;
-extern unsigned long button2PressTime;
-extern bool button1LongPress;
-extern bool button2LongPress;
+// Button state variables are now encapsulated in this file
+static int lastButton1State = HIGH;
+static int lastButton2State = HIGH;
+static unsigned long lastDebounceTime1 = 0;
+static unsigned long lastDebounceTime2 = 0;
+static unsigned long button1PressTime = 0;
+static unsigned long button2PressTime = 0;
+static bool button1LongPress = false;
+static bool button2LongPress = false;
 
 // ============================================================================
 // MAIN BUTTON DISPATCHER

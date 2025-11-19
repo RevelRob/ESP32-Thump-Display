@@ -20,6 +20,10 @@ This file tracks planned features and necessary bug fixes for the TTGO BLE Messa
     - [ ] Eventually, package the app for submission to the Apple App Store using a developer account.
 - [ ] **Responsive UI:** Adapt the on-screen display logic to be compatible with other devices that have different screen sizes and resolutions.
 
+## Code Refinements
+- [x] **Encapsulate Globals:** Move global variables into their respective modules to reduce global scope pollution (e.g., button state into `buttons.cpp`, brightness timeout into `display.cpp`).
+- [x] **Modularize Logic:** Move logic from `main.cpp` into the appropriate modules to improve separation of concerns.
+
 ## Completed Bug Fixes
 - [x] **Fix mirrored text color:** The mirrored text is now green as opposed to red.
 - [x] **Fix mirrored text scroll speed:** The mirrored text now scrolls at the same speed as non-mirrored text.

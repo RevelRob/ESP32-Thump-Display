@@ -44,24 +44,11 @@ unsigned long lastDataTime = 0;
 unsigned long lastMessageReceivedTime = 0;
 String messageHistory[MAX_MESSAGES];
 
-// Button state
-int lastButton1State = HIGH;
-int lastButton2State = HIGH;
-unsigned long lastDebounceTime1 = 0;
-unsigned long lastDebounceTime2 = 0;
-unsigned long button1PressTime = 0;
-unsigned long button2PressTime = 0;
-bool button1LongPress = false;
-bool button2LongPress = false;
-
 // Connection and battery status
 unsigned long lastBatteryCheck = 0;
 
 // Brightness control
 int brightness = 100; // Default brightness (100%)
-unsigned long brightnessDisplayTime = 0;
-bool brightnessChanged = false;
-bool showingBrightness = false;
 
 // Main Menu
 const char* mainMenuItems[] = {"Messages", "Settings", "Info"};
@@ -203,6 +190,7 @@ void setup() {
 void loop() {
     handleButtons();
     updateDisplay();
+    handleBrightnessDisplay();
     
     // Check battery level periodically
     if (millis() - lastBatteryCheck > BATTERY_CHECK_INTERVAL) {
@@ -229,17 +217,6 @@ void loop() {
         }
     }
 
-    // Save brightness if it changed
-    if (brightnessChanged) {
-        saveBrightness();
-        brightnessChanged = false;
-    }
-    
-    // Hide brightness display after 3 seconds
-    if (showingBrightness && (millis() - brightnessDisplayTime) > 3000) {
-        hideBrightnessChange();
-    }
-    
     // Check if we should enter deep sleep
     checkSleep();
     

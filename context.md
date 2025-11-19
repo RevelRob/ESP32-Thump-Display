@@ -4,6 +4,12 @@ This file tracks the major changes and decisions made during the development of 
 
 ## November 2025
 
+### Code Refinements
+*   **Encapsulated Globals:** Refactored the code to improve modularity and reduce global scope pollution.
+    *   Moved button-related state variables (e.g., `lastButton1State`, `button1PressTime`) from `globals.h` and `main.cpp` into `buttons.cpp` as static variables.
+    *   Moved brightness display logic and related variables (e.g., `showingBrightness`, `brightnessChanged`) from `globals.h` and `main.cpp` into `display.cpp` as static variables.
+*   **Modularized Logic:** Moved logic from `main.cpp` into the appropriate modules to improve separation of concerns.
+
 ### Message Display Enhancements
 *   **Implemented Auto-Scrolling:** Long messages that exceed the display height now scroll automatically from top to bottom, loop, and pause, ensuring full readability.
 *   **Fixed Mirrored Text Scroll Speed:** Resolved an issue where mirrored text would scroll at a much slower rate than non-mirrored text.

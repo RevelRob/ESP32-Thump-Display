@@ -1,9 +1,6 @@
-feat: Implement message scrolling and fix mirror mode bugs
+refactor: Encapsulate globals and modularize logic
 
-This commit introduces several improvements to the message display functionality:
-
-- Implemented auto-scrolling for long messages to ensure full readability.
-- Fixed a bug that caused mirrored text to scroll at a slower speed.
-- Corrected the color of mirrored text from red to green.
-
-The README, TODO, and changelog have been updated to reflect these new features and bug fixes.
+- Moved button-related state variables from `globals.h` and `main.cpp` into `buttons.cpp` as static variables.
+- Moved brightness display logic and related variables from `globals.h` and `main.cpp` into `display.cpp` as static variables.
+- Updated `TODO.md` to mark the refactoring tasks as complete.
+- Updated `context.md` to document the refactoring.

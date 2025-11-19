@@ -1,6 +1,7 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+#include <TFT_eSPI.h>
 #include "globals.h"
 
 // Function declarations for display-related tasks
@@ -22,6 +23,6 @@ void drawSettingsMenu();
 void drawSubMenu();
 
 void showBrightnessChange();
-void hideBrightnessChange();
+void handleBrightnessDisplay();
 
 #endif // DISPLAY_H

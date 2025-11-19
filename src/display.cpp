@@ -1,4 +1,9 @@
 #include "display.h"
+#include "settings.h"
+
+static bool showingBrightness = false;
+static bool brightnessChanged = false;
+static unsigned long brightnessDisplayTime = 0;
 
 // ============================================================================
 // DISPLAY INITIALIZATION
@@ -629,11 +634,17 @@ void showBrightnessChange() {
     tft.print(brightnessText);
 
     showingBrightness = true;
+    brightnessChanged = true;
+    brightnessDisplayTime = millis();
 }
 
-void hideBrightnessChange() {
-    if (showingBrightness) {
+void handleBrightnessDisplay() {
+    if (showingBrightness && (millis() - brightnessDisplayTime) > 3000) {
         showingBrightness = false;
+        if (brightnessChanged) {
+            saveBrightness();
+            brightnessChanged = false;
+        }
         // Redisplay current content based on the current page
         switch(currentPage) {
             case PAGE_MESSAGES:
