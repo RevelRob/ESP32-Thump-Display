@@ -453,7 +453,7 @@ void drawSubMenu() {
     if (settingsMenuIndex == 3) { // Mirror Screen
         tft.setFreeFont(FONT_SANS_9);
         tft.setCursor(5, startY);
-        tft.print("Mirror messages received");
+        tft.print("Mirror received messages");
         startY += 20; // Move options down to make space for the description
     }
 

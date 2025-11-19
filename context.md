@@ -23,13 +23,10 @@ This file tracks the major changes and decisions made during the development of 
 ### UI and Stability Fixes
 *   **Refined Menu Scrolling:** Implemented a more intuitive three-phase scrolling logic for settings menus (highlight moves, list scrolls, highlight moves again).
 *   **Corrected Menu Highlighting:** Changed the highlight style in all menus from a white background block to green text for a cleaner, more consistent look.
-*   **Fixed Message Display:**
-    *   Resolved a persistent issue where the top line of message text was clipped. The final fix involved adjusting the cursor's Y-position within the drawing sprite to `fontHeight() - 8`.
-    *   Corrected the vertical alignment of the entire message block to remove the unwanted gap below the navigation hints.
-    *   Re-enabled the dynamic font sizing feature to ensure messages are always displayed as large as possible.
+*   **Perfected Message Display:** After several iterations, resolved the text clipping and positioning issues on the Messages page. The final fix involved adjusting the Y-cursor position within the drawing sprite to `fontHeight() - 8` and correcting the content area's start position. Dynamic font sizing was also restored.
 *   **Prevented Crashes:**
     *   Fixed a `LoadProhibited` crash when entering sub-menus with fewer items than the visible area (e.g., "Mirror Screen") by improving the scrolling logic.
-    *   Made settings navigation more robust by preventing entry into unimplemented menu items, which previously caused crashes.
+    *   Made settings navigation more robust to prevent crashes when entering unimplemented menu items.
 *   **Added Mirror Screen Feature:** Implemented a "Mirror Screen" setting that horizontally flips the message text display. This setting is saved to and loaded from EEPROM.
 
 ### Major Code Refactoring
