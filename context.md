@@ -4,6 +4,11 @@ This file tracks the major changes and decisions made during the development of 
 
 ## November 2025
 
+### Message Display Enhancements
+*   **Implemented Auto-Scrolling:** Long messages that exceed the display height now scroll automatically from top to bottom, loop, and pause, ensuring full readability.
+*   **Fixed Mirrored Text Scroll Speed:** Resolved an issue where mirrored text would scroll at a much slower rate than non-mirrored text.
+*   **Corrected Mirrored Text Color:** Fixed a bug that caused mirrored text to appear red instead of the standard green.
+
 ### Messages Page UI/UX Refinements
 *   **Reverted Viewport Logic:** Removed the complex wrap-and-scroll viewport from the Messages page to resolve text cutoff and alignment issues, returning to a simpler display method.
 *   **Layout and Color Correction:**

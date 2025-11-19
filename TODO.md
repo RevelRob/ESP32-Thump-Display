@@ -4,6 +4,7 @@ This file tracks planned features and necessary bug fixes for the TTGO BLE Messa
 
 ## Features & Enhancements
 
+- [x] **Auto-scrolling for long messages:** Messages that are too long to fit on the screen will automatically scroll.
 - [x] **Fix Mirror Setting:** The "Mirror Screen" feature now correctly renders message text as a mirror image when set to "On".
 - [ ] **Implement Smart Text:** Add the "Smart Text" setting to intelligently format or process incoming messages.
 - [ ] **OTA Updates:** Integrate Over-the-Air (OTA) update capabilities to allow for wireless firmware updates.
@@ -18,3 +19,7 @@ This file tracks planned features and necessary bug fixes for the TTGO BLE Messa
     - [ ] The app should be able to send messages to the device via BLE.
     - [ ] Eventually, package the app for submission to the Apple App Store using a developer account.
 - [ ] **Responsive UI:** Adapt the on-screen display logic to be compatible with other devices that have different screen sizes and resolutions.
+
+## Completed Bug Fixes
+- [x] **Fix mirrored text color:** The mirrored text is now green as opposed to red.
+- [x] **Fix mirrored text scroll speed:** The mirrored text now scrolls at the same speed as non-mirrored text.

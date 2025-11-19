@@ -10,6 +10,7 @@ This project transforms a TTGO T-Display ESP32 board into a versatile, portable 
 
 *   **Wireless Message Display:** Receives text data over a BLE UART service and displays it on the screen.
 *   **Message History:** Keeps a history of the last 20 messages, allowing you to scroll back and forth.
+*   **Auto-scrolling for long messages:** Messages that are too long to fit on the screen will automatically scroll.
 *   **Dynamic User Interface:**
     *   A persistent header displays critical status information: BLE connection status (green/red), battery level, and the current screen name.
     *   Message text automatically resizes to best fit the display area.

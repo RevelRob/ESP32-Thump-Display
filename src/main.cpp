@@ -107,6 +107,14 @@ const char* mirrorOptions[] = {"Off", "On"};
 const int NUM_MIRROR_OPTIONS = 2;
 bool mirrorMessages = false;
 
+// Message Scrolling
+bool isCurrentMessageLong = false;
+int scrollOffset = 0;
+unsigned long lastScrollTime = 0;
+int scrollState = 0; // 0 = paused at top, 1 = scrolling down, 2 = paused at bottom
+int totalMessageHeight = 0;
+const GFXfont* currentFont = FONT_SANS_9;
+
 
 // ============================================================================ 
 void clearAllMessages() {
@@ -194,6 +202,7 @@ void setup() {
 // ============================================================================ 
 void loop() {
     handleButtons();
+    updateDisplay();
     
     // Check battery level periodically
     if (millis() - lastBatteryCheck > BATTERY_CHECK_INTERVAL) {

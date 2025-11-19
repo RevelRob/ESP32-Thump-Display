@@ -208,92 +208,135 @@ void drawInfoPage() {
 }
 
 void pushSpriteMirrored(TFT_eSprite* sprite, int32_t x, int32_t y) {
-    uint16_t* buffer = (uint16_t*)sprite->getPointer();
+    static uint16_t* mirroredBuffer = nullptr;
+    static int32_t bufferWidth = 0;
+    static int32_t bufferHeight = 0;
+
+    uint16_t* originalBuffer = (uint16_t*)sprite->getPointer();
     int32_t w = sprite->width();
     int32_t h = sprite->height();
 
-    // Push sprite to screen with pixels in each row horizontally reversed
+    // Check if buffer needs to be (re)allocated. This is to prevent memory
+    // allocation on every frame of the scrolling animation.
+    if (mirroredBuffer == nullptr || bufferWidth != w || bufferHeight != h) {
+        if (mirroredBuffer) free(mirroredBuffer);
+        mirroredBuffer = (uint16_t*)malloc(w * h * sizeof(uint16_t));
+        if (!mirroredBuffer) {
+            Serial.println("Failed to allocate memory for mirrored buffer");
+            bufferWidth = 0;
+            bufferHeight = 0;
+            return;
+        }
+        bufferWidth = w;
+        bufferHeight = h;
+    }
+
+    // Copy and mirror pixels from the original buffer to the static mirrored buffer.
+    // The byte-swap operation that was here previously was causing the color to change
+    // from green to red, and was unnecessary.
     for (int32_t j = 0; j < h; j++) {
         for (int32_t i = 0; i < w; i++) {
-            // Read pixel from sprite buffer and draw to the screen in mirrored position
-            uint16_t color = buffer[i + j * w]; // Color is in wrong byte order
-            color = (color >> 8) | (color << 8); // Swap bytes to correct the color
-            tft.drawPixel(x + (w - 1 - i), y + j, color);
+            // Get color from original and place it in the mirrored position
+            mirroredBuffer[(w - 1 - i) + j * w] = originalBuffer[i + j * w];
         }
     }
+
+    // Push the entire mirrored buffer to the screen at once
+    tft.pushImage(x, y, w, h, mirroredBuffer);
 }
 
 
 void displayCurrentMessage() {
+    // This function is now an initializer for the message screen.
+    // It sets up the static elements and determines if scrolling is needed.
+    
     clearContentArea();
     tft.setRotation(1);
 
     currentPage = PAGE_MESSAGES;
     setScreenName("Messages");
 
-    // Define positions and dimensions
-    int topY = HEADER_HEIGHT + 16; // Pushed up to be right below the header
-    int bottomY = tft.height() - 6; // Pushed down to the bottom of the display
-    int contentStartY = topY + 8; // Position sprite just below the top nav text
+    // Reset scrolling state for the new message
+    isCurrentMessageLong = false;
+    scrollOffset = 0;
+    scrollState = 0; // 0 = paused at top
+    lastScrollTime = millis();
 
-    // Draw navigation hints
-    tft.setTextColor(TFT_CYAN, TFT_BLACK); // Changed to CYAN to match other nav hints
+    // --- Draw static UI elements ---
+    int topY = HEADER_HEIGHT + 16;
+    int bottomY = tft.height() - 6;
+    
+    tft.setTextColor(TFT_CYAN, TFT_BLACK);
     tft.setFreeFont(FONT_SANS_9);
 
-    // Top-left: "Msg x/x"
     String msgCountText = "Msg " + (totalMessages > 0 ? String(displayMessageIndex + 1) : "0") + "/" + String(totalMessages);
     tft.setCursor(5, topY);
     tft.print(msgCountText);
 
-    // Top-right: "Prev->" or "Exit->" (Button 2)
     String topRightText = (totalMessages > 0) ? "Prev->" : "Exit->";
     int topRightWidth = tft.textWidth(topRightText.c_str());
     tft.setCursor(tft.width() - topRightWidth - 5, topY);
     tft.print(topRightText);
 
-    // Bottom-left: "Hold Bttn: Main"
     tft.setCursor(5, bottomY);
     tft.print("Hold Bttn: Main");
 
-    // Bottom-right: "Next->" (Button 1)
     String bottomRightText = "Next->";
     int bottomRightWidth = tft.textWidth(bottomRightText.c_str());
     tft.setCursor(tft.width() - bottomRightWidth - 5, bottomY);
     tft.print(bottomRightText);
 
+    // --- Calculate message height and determine if scrolling is needed ---
+    if (totalMessages > 0) {
+        int contentWidth = tft.width();
+        int contentHeight = tft.height() - (topY + 8) - 20;
+        String message = messageHistory[displayMessageIndex];
 
-    // Create a sprite for the message content area
+        // Find best font size that fits horizontally
+        currentFont = FONT_SANS_9; // Default to smallest
+        if (calculateWrappedTextHeight(message, FONT_SANS_BOLD_12, contentWidth - 10) <= contentHeight) {
+            currentFont = FONT_SANS_BOLD_12;
+        } else if (calculateWrappedTextHeight(message, FONT_SANS_12, contentWidth - 10) <= contentHeight) {
+            currentFont = FONT_SANS_12;
+        }
+
+        // Now get the full height with the chosen font
+        totalMessageHeight = calculateWrappedTextHeight(message, currentFont, contentWidth - 10);
+
+        if (totalMessageHeight > contentHeight) {
+            isCurrentMessageLong = true;
+        }
+    }
+
+    // Perform the initial draw of the message content
+    drawMessageContent();
+}
+
+void drawMessageContent() {
+    // This function draws the message content itself, using the current scrollOffset
+    int topY = HEADER_HEIGHT + 16;
+    int contentStartY = topY + 8;
     int contentWidth = tft.width();
     int contentHeight = tft.height() - contentStartY - 20;
+
     TFT_eSprite messageSprite = TFT_eSprite(&tft);
     messageSprite.createSprite(contentWidth, contentHeight);
-    messageSprite.fillSprite(TFT_BLACK); // Revert background to black
-
-    // Set text properties for the sprite
+    messageSprite.fillSprite(TFT_BLACK);
     messageSprite.setTextColor(TFT_GREEN, TFT_BLACK);
 
     if (totalMessages == 0) {
         messageSprite.setFreeFont(FONT_SANS_9);
-        // Set cursor y to font height to prevent clipping at the top
         messageSprite.setCursor(5, messageSprite.fontHeight() - 8);
-        messageSprite.println("Waiting for messages..."); // println still works with datum
+        messageSprite.println("Waiting for messages...");
     } else {
         if (displayMessageIndex < 0) displayMessageIndex = 0;
         if (displayMessageIndex >= totalMessages) displayMessageIndex = totalMessages - 1;
 
         String message = messageHistory[displayMessageIndex];
-
-        // Determine the best font size
-        const GFXfont* font = FONT_SANS_9; // Default to smallest
-        if (doesTextFit(message, FONT_SANS_BOLD_12, contentWidth - 10, contentHeight)) {
-            font = FONT_SANS_BOLD_12;
-        } else if (doesTextFit(message, FONT_SANS_12, contentWidth - 10, contentHeight)) {
-            font = FONT_SANS_12;
-            }
-
-        messageSprite.setFreeFont(font);
-        // Set cursor y to font height to prevent clipping at the top
-        messageSprite.setCursor(5, messageSprite.fontHeight() - 8);
+        
+        messageSprite.setFreeFont(currentFont);
+        // Set cursor with scroll offset
+        messageSprite.setCursor(5, messageSprite.fontHeight() - 8 - scrollOffset);
 
         // Simple word wrap implementation onto the sprite
         String currentLine = "";
@@ -301,9 +344,7 @@ void displayCurrentMessage() {
         for (int i = 0; i < message.length(); i++) {
             char c = message[i];
             if (c == ' ' || c == '\n' || i == message.length() - 1) {
-                if (i == message.length() - 1 && c != ' ' && c != '\n') {
-                    word += c;
-                }
+                if (i == message.length() - 1 && c != ' ' && c != '\n') word += c;
 
                 String testLine = currentLine + (currentLine == "" ? word : " " + word);
                 if (messageSprite.textWidth(testLine.c_str()) > contentWidth - 10 && currentLine != "") {
@@ -326,21 +367,59 @@ void displayCurrentMessage() {
         }
     }
 
-    // Push the sprite to the screen (mirrored or normal)
     if (mirrorMessages) {
         pushSpriteMirrored(&messageSprite, 0, contentStartY);
     } else {
         messageSprite.pushSprite(0, contentStartY);
     }
 
-    // Delete the sprite to free up memory
     messageSprite.deleteSprite();
 }
 
-bool doesTextFit(String message, const GFXfont* font, int maxWidth, int maxHeight) {
-    // This function now uses a temporary sprite to measure text, to avoid screen flicker
+void updateDisplay() {
+    if (currentPage != PAGE_MESSAGES || !isCurrentMessageLong) {
+        return; // Only scroll on the message page for long messages
+    }
+
+    unsigned long time = millis();
+
+    // State 0: Paused at the top
+    if (scrollState == 0) {
+        if (time - lastScrollTime > SCROLL_PAUSE) {
+            scrollState = 1; // Start scrolling down
+            lastScrollTime = time;
+        }
+    }
+    // State 1: Scrolling down
+    else if (scrollState == 1) {
+        if (time - lastScrollTime > SCROLL_DELAY) {
+            scrollOffset++;
+            lastScrollTime = time;
+
+            int contentHeight = tft.height() - (HEADER_HEIGHT + 16 + 8) - 20;
+            if (scrollOffset >= totalMessageHeight - contentHeight) {
+                scrollOffset = totalMessageHeight - contentHeight;
+                scrollState = 2; // Reached bottom, start pause
+                lastScrollTime = time;
+            }
+            drawMessageContent();
+        }
+    }
+    // State 2: Paused at the bottom
+    else if (scrollState == 2) {
+        if (time - lastScrollTime > SCROLL_PAUSE) {
+            scrollOffset = 0; // Reset to top
+            scrollState = 0; // Pause at top
+            lastScrollTime = time;
+            drawMessageContent();
+        }
+    }
+}
+
+int calculateWrappedTextHeight(String message, const GFXfont* font, int maxWidth) {
+    // This function uses a temporary sprite to measure text height without drawing to the screen
     TFT_eSprite tempSprite = TFT_eSprite(&tft);
-    tempSprite.createSprite(1, 1); // Minimal sprite
+    tempSprite.createSprite(1, 1); // Minimal sprite to access font properties
     tempSprite.setFreeFont(font);
 
     int lineHeight = tempSprite.fontHeight();
@@ -360,17 +439,17 @@ bool doesTextFit(String message, const GFXfont* font, int maxWidth, int maxHeigh
             int textWidth = tempSprite.textWidth(testLine.c_str());
 
             if (textWidth > maxWidth && currentLine != "") {
-                currentLine = word;
                 currentY += lineHeight;
-                if (currentY + lineHeight > maxHeight) {
-                    tempSprite.deleteSprite();
-                    return false;
-                }
+                currentLine = word;
             } else {
                 currentLine = testLine;
             }
 
             word = "";
+            if (c == '\n') {
+                currentY += lineHeight;
+                currentLine = "";
+            }
         } else {
             word += c;
         }
@@ -381,7 +460,7 @@ bool doesTextFit(String message, const GFXfont* font, int maxWidth, int maxHeigh
     }
 
     tempSprite.deleteSprite();
-    return currentY <= maxHeight;
+    return currentY;
 }
 
 // ============================================================================

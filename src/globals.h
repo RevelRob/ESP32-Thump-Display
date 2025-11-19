@@ -119,6 +119,16 @@ extern bool mirrorMessages;
 extern const char* mirrorOptions[];
 extern const int NUM_MIRROR_OPTIONS;
 
+// Message Scrolling
+extern bool isCurrentMessageLong;
+extern int scrollOffset;
+extern unsigned long lastScrollTime;
+extern int scrollState; // 0 = paused at top, 1 = scrolling down, 2 = paused at bottom
+extern int totalMessageHeight;
+extern const GFXfont* currentFont;
+const unsigned long SCROLL_DELAY = 50; // ms per pixel scroll
+const unsigned long SCROLL_PAUSE = 2000; // ms to pause at top/bottom
+
 // Button states
 extern int lastButton1State;
 extern int lastButton2State;
