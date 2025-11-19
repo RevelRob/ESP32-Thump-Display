@@ -194,8 +194,6 @@ void setup() {
 // ============================================================================ 
 void loop() {
     handleButtons();
-    brightnessDisplayTime = millis();
-
     
     // Check battery level periodically
     if (millis() - lastBatteryCheck > BATTERY_CHECK_INTERVAL) {
@@ -207,16 +205,21 @@ void loop() {
         lastBatteryCheck = millis();
     }
     
-    // Check if we have buffered data and no new data has arrived for a while
-    if (messageBuffer.length() > 0 && (millis() - lastDataTime) > MESSAGE_TIMEOUT) {
-        Serial.println("Timeout - processing remaining buffer");
-        messageBuffer.trim();
-        if (messageBuffer.length() > 0) {
-            addMessageToHistory(messageBuffer);
+    // Centralized message processing logic
+    if (messageBuffer.length() > 0) {
+        int newlinePos;
+        // Process all complete messages ending in a newline
+        while ((newlinePos = messageBuffer.indexOf('\n')) >= 0) {
+            addMessageToHistory(messageBuffer.substring(0, newlinePos));
+            messageBuffer = messageBuffer.substring(newlinePos + 1);
         }
-        messageBuffer = "";
+        // If there's a remaining fragment and a timeout occurs, process it
+        if (messageBuffer.length() > 0 && (millis() - lastDataTime) > MESSAGE_TIMEOUT) {
+            addMessageToHistory(messageBuffer);
+            messageBuffer = "";
+        }
     }
-    
+
     // Save brightness if it changed
     if (brightnessChanged) {
         saveBrightness();

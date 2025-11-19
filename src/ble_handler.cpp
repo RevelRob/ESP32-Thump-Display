@@ -22,18 +22,6 @@ class MyCallbacks : public BLECharacteristicCallbacks {
             lastActivityTime = millis();
             messageBuffer += value;
             lastDataTime = millis();
-            
-            int newlinePos;
-            while ((newlinePos = messageBuffer.indexOf('\n')) >= 0) {
-                String completeMessage = messageBuffer.substring(0, newlinePos);
-                completeMessage.trim();
-                
-                if (completeMessage.length() > 0) {
-                    addMessageToHistory(completeMessage);
-                }
-                
-                messageBuffer = messageBuffer.substring(newlinePos + 1);
-            }
         }
     }
 };

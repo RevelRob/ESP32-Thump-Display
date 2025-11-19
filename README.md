@@ -19,6 +19,7 @@ This project transforms a TTGO T-Display ESP32 board into a versatile, portable 
     *   **Brightness Control:** Adjust the screen backlight brightness from 10% to 100% in 10% increments.
     *   **Auto Standby:** Configure an inactivity timer (from 10 seconds to 2 hours) to automatically enter a power-saving deep sleep mode.
     *   **Persistent Settings:** Brightness and standby settings are saved to EEPROM, so they are retained through restarts and wake-ups.
+    *   **Mirror Screen:** Option to horizontally mirror the displayed message text.
 *   **Advanced Power Management:**
     *   Utilizes ESP32's deep sleep to significantly extend battery life.
     *   The device can be woken from sleep by pressing either of the two buttons.

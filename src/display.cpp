@@ -30,6 +30,7 @@ void updateHeader() {
     // Clear header area
     tft.fillRect(0, 0, tft.width(), HEADER_HEIGHT, TFT_BLACK);
 
+
     // Draw connection status (left)
     drawConnectionStatus();
 
@@ -206,6 +207,23 @@ void drawInfoPage() {
     tft.println("November 2025");
 }
 
+void pushSpriteMirrored(TFT_eSprite* sprite, int32_t x, int32_t y) {
+    uint16_t* buffer = (uint16_t*)sprite->getPointer();
+    int32_t w = sprite->width();
+    int32_t h = sprite->height();
+
+    // Push sprite to screen with pixels in each row horizontally reversed
+    for (int32_t j = 0; j < h; j++) {
+        for (int32_t i = 0; i < w; i++) {
+            // Read pixel from sprite buffer and draw to the screen in mirrored position
+            uint16_t color = buffer[i + j * w]; // Color is in wrong byte order
+            color = (color >> 8) | (color << 8); // Swap bytes to correct the color
+            tft.drawPixel(x + (w - 1 - i), y + j, color);
+        }
+    }
+}
+
+
 void displayCurrentMessage() {
     clearContentArea();
     tft.setRotation(1);
@@ -310,7 +328,7 @@ void displayCurrentMessage() {
 
     // Push the sprite to the screen (mirrored or normal)
     if (mirrorMessages) {
-        messageSprite.pushSprite(0, contentStartY, true); // The 'true' flag enables mirroring
+        pushSpriteMirrored(&messageSprite, 0, contentStartY);
     } else {
         messageSprite.pushSprite(0, contentStartY);
     }

@@ -4,7 +4,7 @@ This file tracks planned features and necessary bug fixes for the TTGO BLE Messa
 
 ## Features & Enhancements
 
-- [ ] **Fix Mirror Setting:** The "Mirror Screen" feature is not yet functional. When set to "On," it should render the message text as a mirror image.
+- [x] **Fix Mirror Setting:** The "Mirror Screen" feature now correctly renders message text as a mirror image when set to "On".
 - [ ] **Implement Smart Text:** Add the "Smart Text" setting to intelligently format or process incoming messages.
 - [ ] **OTA Updates:** Integrate Over-the-Air (OTA) update capabilities to allow for wireless firmware updates.
 - [ ] **Unique Device Identification:**
