@@ -44,10 +44,11 @@ const int MAX_BRIGHTNESS = 100;
 const int BRIGHTNESS_STEP = 10;
 
 // EEPROM addresses
-const int EEPROM_SIZE = 3;
+const int EEPROM_SIZE = 4;
 const int BRIGHTNESS_ADDR = 0;
 const int STANDBY_ADDR = 1;
 const int MIRROR_ADDR = 2;
+const int SMART_TEXT_ADDR = 3;
 
 // ============================================================================
 // ENUMS & STRUCTS
@@ -116,6 +117,14 @@ extern const unsigned long standbyValues[];
 extern bool mirrorMessages;
 extern const char* mirrorOptions[];
 extern const int NUM_MIRROR_OPTIONS;
+
+// Smart Text Setting
+extern bool smartTextEnabled;
+extern const char* smartTextOptions[];
+extern const int NUM_SMART_TEXT_OPTIONS;
+
+// Card Display
+extern bool expectingCardCode;
 
 // Message Scrolling
 extern bool isCurrentMessageLong;

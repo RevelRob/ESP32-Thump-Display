@@ -51,6 +51,17 @@ The interface is controlled using the two buttons on the TTGO board: **Button 1 
 *   Displays credits and project information.
 *   Pressing any button will return you to the Main Menu.
 
+## Smart Text Commands
+
+The device supports special "Smart Text" commands to perform actions beyond just displaying text. All commands are prefixed with a `#`.
+
+*   **`#`**: Clears the current message from the screen.
+*   **`#CARDS`**: This command prepares the device to receive a playing card code on the next line.
+    *   The code is a 2 or 3-digit number that specifies the card.
+    *   **2-digit codes:** The first digit represents the card number (1-9, where 1 is Ace), and the second digit represents the suit (1: Spades, 2: Hearts, 3: Clubs, 4: Diamonds).
+    *   **3-digit codes:** The first two digits represent the card (10: 10, 11: Jack, 12: Queen, 13: King), and the third digit represents the suit.
+    *   Example: Sending `#CARDS` followed by `122` on the next line will display "Queen of Hearts".
+
 ## BLE Service
 
 To send messages to the device, you can use any BLE mobile app that supports a serial or UART profile.

@@ -104,6 +104,34 @@ void saveMirrorSetting() {
     Serial.println(mirrorMessages ? "On" : "Off");
 }
 
+// ============================================================================
+// SMART TEXT SETTINGS
+// ============================================================================
+void loadSmartTextSetting() {
+    EEPROM.begin(EEPROM_SIZE);
+    byte savedSmartTextState = EEPROM.read(SMART_TEXT_ADDR);
+    
+    if (savedSmartTextState == 0 || savedSmartTextState == 1) {
+        smartTextEnabled = (bool)savedSmartTextState;
+        Serial.print("Loaded Smart Text setting from EEPROM: ");
+        Serial.println(smartTextEnabled ? "On" : "Off");
+    } else {
+        smartTextEnabled = false; // Default to Off
+        EEPROM.write(SMART_TEXT_ADDR, smartTextEnabled);
+        Serial.println("Using default Smart Text setting: Off");
+    }
+    EEPROM.end();
+}
+
+void saveSmartTextSetting() {
+    EEPROM.begin(EEPROM_SIZE);
+    EEPROM.write(SMART_TEXT_ADDR, smartTextEnabled);
+    EEPROM.commit();
+    EEPROM.end();
+    Serial.print("Saved Smart Text setting to EEPROM: ");
+    Serial.println(smartTextEnabled ? "On" : "Off");
+}
+
 
 // ============================================================================
 // SETTINGS MENU NAVIGATION LOGIC
@@ -139,6 +167,8 @@ void enterSubMenu() {
         EEPROM.end();
     } else if (settingsMenuIndex == 3) { // Mirror Screen
         subMenuIndex = (int)mirrorMessages;
+    } else if (settingsMenuIndex == 5) { // Smart Text
+        subMenuIndex = (int)smartTextEnabled;
     }
     drawSubMenu();
 }
@@ -162,6 +192,11 @@ void cycleSubMenuOption() {
             subMenuIndex = (subMenuIndex + 1) % NUM_MIRROR_OPTIONS;
             mirrorMessages = (bool)subMenuIndex;
             saveMirrorSetting();
+            break;
+        case 5: // Smart Text
+            subMenuIndex = (subMenuIndex + 1) % NUM_SMART_TEXT_OPTIONS;
+            smartTextEnabled = (bool)subMenuIndex;
+            saveSmartTextSetting();
             break;
         default:
             // Do nothing for unimplemented sub-menus

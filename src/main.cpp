@@ -94,6 +94,11 @@ const char* mirrorOptions[] = {"Off", "On"};
 const int NUM_MIRROR_OPTIONS = 2;
 bool mirrorMessages = false;
 
+// Smart Text options
+const char* smartTextOptions[] = {"Off", "On"};
+const int NUM_SMART_TEXT_OPTIONS = 2;
+bool smartTextEnabled = false;
+
 // Message Scrolling
 bool isCurrentMessageLong = false;
 int scrollOffset = 0;
@@ -158,6 +163,7 @@ void setup() {
     loadBrightness();
     loadStandbySetting();
     loadMirrorSetting();
+    loadSmartTextSetting();
 
     // Initialize display
     initializeDisplay();

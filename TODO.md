@@ -7,6 +7,7 @@ This file tracks planned features and necessary bug fixes for the TTGO BLE Messa
 - [x] **Auto-scrolling for long messages:** Messages that are too long to fit on the screen will automatically scroll.
 - [x] **Fix Mirror Setting:** The "Mirror Screen" feature now correctly renders message text as a mirror image when set to "On".
 - [ ] **Implement Smart Text:** Add the "Smart Text" setting to intelligently format or process incoming messages.
+  - [x] Implemented `#CARDS` command to display playing cards from a code.
 - [ ] **OTA Updates:** Integrate Over-the-Air (OTA) update capabilities to allow for wireless firmware updates.
 - [ ] **Unique Device Identification:**
     - [ ] Develop a method to flash multiple devices with unique BLE connection names and device-specific information.

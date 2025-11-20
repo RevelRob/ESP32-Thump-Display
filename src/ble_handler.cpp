@@ -1,6 +1,13 @@
 #include "ble_handler.h"
 #include "display.h"
 #include <BLE2902.h>
+#include <Arduino.h>
+
+bool expectingCardCode = false;
+
+// Forward declaration
+void clearAllMessages();
+String getCardName(String code);
 
 // These are defined in main.cpp but used here for message buffering
 extern String messageBuffer;
@@ -82,7 +89,40 @@ void setConnected(bool connected) {
     }
 }
 
-void addMessageToHistory(String message) {
+bool processSmartTextMessage(String message) {
+    message.trim();
+    if (message.equalsIgnoreCase("#")) {
+        clearAllMessages();
+        return true;
+    }
+    if (message.equalsIgnoreCase("#REBOOT")) {
+        ESP.restart();
+        return true;
+    }
+    if (message.equalsIgnoreCase("#CARDS")) {
+        expectingCardCode = true;
+        return true;
+    }
+    return false;
+}
+
+// The original addMessageToHistory, but renamed and declared static
+static void addSingleMessageToHistory(String message) {
+    if (smartTextEnabled) {
+        if (processSmartTextMessage(message)) {
+            return; // Smart text command was processed, so don't add to history
+        }
+        if (expectingCardCode) {
+            expectingCardCode = false; // Consume the expectation
+            String cardName = getCardName(message);
+            if (cardName.length() > 0) {
+                message = cardName; // The message to be added is now the card name.
+            } else {
+                return; // Invalid card code, do nothing.
+            }
+        }
+    }
+
     message.trim();
     if (message.length() == 0) return;
     
@@ -109,6 +149,27 @@ void addMessageToHistory(String message) {
     displayCurrentMessage();
 }
 
+// The new public addMessageToHistory that splits messages by newline
+void addMessageToHistory(String message) {
+    int lastPos = 0;
+    for (int i = 0; i < message.length(); i++) {
+        if (message.charAt(i) == '\n') {
+            String line = message.substring(lastPos, i);
+            line.trim();
+            if (line.length() > 0) {
+                addSingleMessageToHistory(line);
+            }
+            lastPos = i + 1;
+        }
+    }
+    // Process the last part of the message (or the whole message if no newline)
+    String remaining = message.substring(lastPos);
+    remaining.trim();
+    if (remaining.length() > 0) {
+        addSingleMessageToHistory(remaining);
+    }
+}
+
 void checkAutoClear() {
     if (totalMessages > 0 && (millis() - lastMessageReceivedTime) > CLEAR_TIMEOUT) {
         Serial.println(">>> AUTO-CLEARING OLD MESSAGES");
@@ -116,4 +177,45 @@ void checkAutoClear() {
         totalMessages = 0;
         displayMessageIndex = -1;
     }
+}
+
+String getCardName(String code) {
+    code.trim();
+    if (code.length() < 2 || code.length() > 3) return "";
+
+    String rankStr, suitStr;
+    String rankPart, suitPart;
+
+    if (code.length() == 2) {
+        rankPart = code.substring(0, 1);
+        suitPart = code.substring(1, 2);
+    } else { // length is 3
+        rankPart = code.substring(0, 2);
+        suitPart = code.substring(2, 3);
+    }
+
+    // Get Rank
+    if (rankPart == "1") rankStr = "Ace";
+    else if (rankPart == "2") rankStr = "2";
+    else if (rankPart == "3") rankStr = "3";
+    else if (rankPart == "4") rankStr = "4";
+    else if (rankPart == "5") rankStr = "5";
+    else if (rankPart == "6") rankStr = "6";
+    else if (rankPart == "7") rankStr = "7";
+    else if (rankPart == "8") rankStr = "8";
+    else if (rankPart == "9") rankStr = "9";
+    else if (rankPart == "10") rankStr = "10";
+    else if (rankPart == "11") rankStr = "Jack";
+    else if (rankPart == "12") rankStr = "Queen";
+    else if (rankPart == "13") rankStr = "King";
+    else return ""; // Invalid rank
+
+    // Get Suit
+    if (suitPart == "1") suitStr = "Spades";
+    else if (suitPart == "2") suitStr = "Hearts";
+    else if (suitPart == "3") suitStr = "Clubs";
+    else if (suitPart == "4") suitStr = "Diamonds";
+    else return ""; // Invalid suit
+
+    return rankStr + " of " + suitStr;
 }

@@ -7,7 +7,6 @@
 void loadBrightness();
 void saveBrightness();
 void setBrightness(int level);
-void adjustBrightness(int delta);
 
 // Standby
 void loadStandbySetting();
@@ -16,6 +15,10 @@ void saveStandbySetting();
 // Mirror
 void loadMirrorSetting();
 void saveMirrorSetting();
+
+// Smart Text
+void loadSmartTextSetting();
+void saveSmartTextSetting();
 
 // Menu Navigation
 void enterSettingsMenu();

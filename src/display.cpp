@@ -251,6 +251,32 @@ void pushSpriteMirrored(TFT_eSprite* sprite, int32_t x, int32_t y) {
 }
 
 
+void displayCard(String rank, String suit) {
+    clearContentArea();
+    setScreenName("Card");
+
+    // Navigation hint
+    tft.setTextColor(TFT_CYAN, TFT_BLACK);
+    tft.setFreeFont(FONT_SANS_9);
+    String backHint = "Back->";
+    int backWidth = tft.textWidth(backHint.c_str());
+    tft.setCursor(tft.width() - backWidth - 5, tft.height() - 10);
+    tft.print(backHint);
+
+    // Display card
+    String cardText = rank + suit;
+    tft.setFreeFont(FONT_SANS_BOLD_12); // Using a large bold font
+    
+    // Calculate text width to center it
+    int textWidth = tft.textWidth(cardText.c_str());
+    int x = (tft.width() - textWidth) / 2;
+    int y = (tft.height() - HEADER_HEIGHT) / 2 + HEADER_HEIGHT; // Center vertically in content area
+
+    tft.setCursor(x, y);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.print(cardText);
+}
+
 void displayCurrentMessage() {
     // This function is now an initializer for the message screen.
     // It sets up the static elements and determines if scrolling is needed.
@@ -557,6 +583,11 @@ void drawSubMenu() {
         tft.setCursor(5, startY);
         tft.print("Mirror received messages");
         startY += 20; // Move options down to make space for the description
+    } else if (settingsMenuIndex == 5) { // Smart Text
+        tft.setFreeFont(FONT_SANS_9);
+        tft.setCursor(5, startY);
+        tft.print("Enable commands like #");
+        startY += 20; // Move options down to make space for the description
     }
 
     // New 3-phase scrolling logic for sub-menus
@@ -566,6 +597,7 @@ void drawSubMenu() {
     if (settingsMenuIndex == 0) num_options = NUM_BRIGHTNESS_OPTIONS;
     else if (settingsMenuIndex == 1) num_options = NUM_STANDBY_OPTIONS;
     else if (settingsMenuIndex == 3) num_options = NUM_MIRROR_OPTIONS;
+    else if (settingsMenuIndex == 5) num_options = NUM_SMART_TEXT_OPTIONS;
 
     // Scrolling logic
     if (num_options <= SUB_VISIBLE_ITEMS) {
@@ -610,6 +642,8 @@ void drawSubMenu() {
         draw_items(standbyOptions, NUM_STANDBY_OPTIONS);
     } else if (settingsMenuIndex == 3) { // Mirror Screen
         draw_items(mirrorOptions, NUM_MIRROR_OPTIONS);
+    } else if (settingsMenuIndex == 5) { // Smart Text
+        draw_items(smartTextOptions, NUM_SMART_TEXT_OPTIONS);
     }
 }
 

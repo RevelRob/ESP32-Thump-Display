@@ -14,6 +14,7 @@ void setScreenName(String name);
 
 void drawMainMenu();
 void drawInfoPage();
+void displayCard(String rank, String suit);
 void displayCurrentMessage();
 void drawMessageContent();
 int calculateWrappedTextHeight(String message, const GFXfont* font, int maxWidth);
