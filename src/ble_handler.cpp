@@ -183,8 +183,7 @@ String getCardName(String code) {
     code.trim();
     if (code.length() < 2 || code.length() > 3) return "";
 
-    String rankStr, suitStr;
-    String rankPart, suitPart;
+    String rankStr, suitStr, rankPart, suitPart;
 
     if (code.length() == 2) {
         rankPart = code.substring(0, 1);
@@ -195,7 +194,7 @@ String getCardName(String code) {
     }
 
     // Get Rank
-    if (rankPart == "1") rankStr = "Ace";
+    if (rankPart == "1") rankStr = "A";
     else if (rankPart == "2") rankStr = "2";
     else if (rankPart == "3") rankStr = "3";
     else if (rankPart == "4") rankStr = "4";
@@ -205,17 +204,32 @@ String getCardName(String code) {
     else if (rankPart == "8") rankStr = "8";
     else if (rankPart == "9") rankStr = "9";
     else if (rankPart == "10") rankStr = "10";
-    else if (rankPart == "11") rankStr = "Jack";
-    else if (rankPart == "12") rankStr = "Queen";
-    else if (rankPart == "13") rankStr = "King";
+    else if (rankPart == "11") rankStr = "J";
+    else if (rankPart == "12") rankStr = "Q";
+    else if (rankPart == "13") rankStr = "K";
     else return ""; // Invalid rank
 
     // Get Suit
-    if (suitPart == "1") suitStr = "Spades";
-    else if (suitPart == "2") suitStr = "Hearts";
-    else if (suitPart == "3") suitStr = "Clubs";
-    else if (suitPart == "4") suitStr = "Diamonds";
+    if (suitPart == "1") suitStr = "S";
+    else if (suitPart == "2") suitStr = "H";
+    else if (suitPart == "3") suitStr = "C";
+    else if (suitPart == "4") suitStr = "D";
     else return ""; // Invalid suit
 
-    return rankStr + " of " + suitStr;
+    if (cardTypeSelection == CARD_TYPE_SYMBOLS) {
+        return "[CARD:" + rankStr + "," + suitStr + "]";
+    } else {
+        // Convert rank and suit to words
+        if (rankStr == "A") rankStr = "Ace";
+        else if (rankStr == "J") rankStr = "Jack";
+        else if (rankStr == "Q") rankStr = "Queen";
+        else if (rankStr == "K") rankStr = "King";
+
+        if (suitStr == "S") suitStr = "Spades";
+        else if (suitStr == "H") suitStr = "Hearts";
+        else if (suitStr == "C") suitStr = "Clubs";
+        else if (suitStr == "D") suitStr = "Diamonds";
+
+        return rankStr + " of " + suitStr;
+    }
 }

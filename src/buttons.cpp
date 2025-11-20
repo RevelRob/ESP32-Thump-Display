@@ -170,7 +170,17 @@ void handleSettingsNavigation() {
     
     if (button1State == LOW && lastButton1State == HIGH) {
         if ((millis() - lastDebounceTime1) > DEBOUNCE_DELAY) {
-            settingsMenuIndex = (settingsMenuIndex + 1) % NUM_SETTINGS_ITEMS;
+            settingsMenuIndex++;
+            if (settingsMenuIndex >= NUM_SETTINGS_ITEMS) {
+                settingsMenuIndex = 0;
+            }
+            // If the new item is the disabled Card Type, skip it
+            if (strcmp(settingsItems[settingsMenuIndex], "Card Type") == 0 && !smartTextEnabled) {
+                settingsMenuIndex++;
+                if (settingsMenuIndex >= NUM_SETTINGS_ITEMS) {
+                    settingsMenuIndex = 0;
+                }
+            }
             drawSettingsMenu();
             lastDebounceTime1 = millis();
         }
@@ -178,7 +188,10 @@ void handleSettingsNavigation() {
     
     if (button2State == LOW && lastButton2State == HIGH) {
         if ((millis() - lastDebounceTime2) > DEBOUNCE_DELAY) {
-            if (settingsMenuIndex == NUM_SETTINGS_ITEMS - 1) { // Exit
+            // If the selected item is the disabled Card Type, do nothing
+            if (strcmp(settingsItems[settingsMenuIndex], "Card Type") == 0 && !smartTextEnabled) {
+                // Do nothing
+            } else if (settingsMenuIndex == NUM_SETTINGS_ITEMS - 1) { // Exit
                 exitSettingsMenu();
             } else {
                 enterSubMenu();

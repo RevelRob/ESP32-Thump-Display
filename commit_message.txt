@@ -1,11 +1,6 @@
-feat: Implement #CARDS smart text feature
+fix: Update display code to use ScrollState struct
 
-This commit introduces the #CARDS Smart Text feature, allowing the device to receive and display playing cards.
+This commit fixes compilation errors in `display.cpp` that arose after refactoring the message scrolling variables into a `ScrollState` struct.
 
-- Implemented the `#CARDS` command, which waits for a subsequent message containing a card code.
-- Card codes are parsed to determine the card's rank and suit, and the result is displayed on the screen (e.g., "Ace of Spades").
-- Changed the Smart Text command prefix from `!` to `#` for all commands.
-- The `CLEAR` command is now a single `#`.
-- Fixed a bug that prevented the card name from being displayed after being processed.
-- Updated `README.md` with instructions for the new `#CARDS` feature and the updated command prefix.
-- Updated `TODO.md` to reflect the implementation of the feature.
+- Replaced direct references to `isCurrentMessageLong`, `scrollOffset`, `scrollState`, `lastScrollTime`, `currentFont`, and `totalMessageHeight` with their corresponding members in the `messageScroll` struct (e.g., `messageScroll.isLong`, `messageScroll.offset`).
+- This resolves the "not declared in this scope" errors and makes the display and scrolling logic consistent with the new data structure.

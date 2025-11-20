@@ -1,5 +1,8 @@
 #include "display.h"
 #include "settings.h"
+#include "DejaVuSans_Bold28pt7b.h"
+#include "DejaVuSans_Bold36pt7b.h"
+#include <vector>
 
 static bool showingBrightness = false;
 static bool brightnessChanged = false;
@@ -277,9 +280,108 @@ void displayCard(String rank, String suit) {
     tft.print(cardText);
 }
 
+void drawSuitBitmap(int16_t x, int16_t y, const uint8_t *bitmap, int16_t w, int16_t h, uint16_t color) {
+    const int16_t bytesPerRow = (w + 7) / 8; // Correct stride calculation
+    uint16_t *buffer = (uint16_t *)malloc(w * h * sizeof(uint16_t));
+    if (!buffer) {
+        Serial.println("Failed to allocate memory for suit bitmap buffer");
+        return;
+    }
+
+    for (int16_t j = 0; j < h; j++) {
+        for (int16_t i = 0; i < w; i++) {
+            uint8_t byte = pgm_read_byte(&bitmap[j * bytesPerRow + i / 8]);
+            bool pixelOn = byte & (0x80 >> (i % 8));
+            if (pixelOn) {
+                // Byte-swap the color for pushImage to prevent red from becoming blue.
+                buffer[j * w + i] = (color >> 8) | (color << 8);
+            } else {
+                buffer[j * w + i] = TFT_BLACK;
+            }
+        }
+    }
+
+    tft.pushImage(x, y, w, h, buffer);
+    free(buffer);
+}
+
+
+void drawCardSymbol(String rank, String suitChar) {
+    clearContentArea();
+    setScreenName("Card");
+    
+    // Navigation hint
+    tft.setTextColor(TFT_CYAN, TFT_BLACK);
+    tft.setFreeFont(FONT_SANS_9);
+    String backHint = "Back->";
+    int backWidth = tft.textWidth(backHint.c_str());
+    tft.setCursor(tft.width() - backWidth - 5, tft.height() - 10);
+    tft.print(backHint);
+    
+    // --- Display card rank and suit bitmap ---
+    const GFXfont* rankFont = &DejaVuSans_Bold36pt7b;
+    tft.setFreeFont(rankFont);
+    
+    int rankHeight = rankFont->yAdvance;
+    int rankWidth = tft.textWidth(rank);
+    int spacing = 8;
+    
+    const unsigned char* suit_bits = nullptr;
+    int suit_width = 0;
+    int suit_height = 0;
+    uint16_t suitColor;
+    
+    if (suitChar == "H") {
+        suit_bits = heart_bits; suit_width = heart_width; suit_height = heart_height;
+        suitColor = TFT_RED;
+    } else if (suitChar == "D") {
+        suit_bits = diamond_bits; suit_width = diamond_width; suit_height = diamond_height;
+        suitColor = TFT_RED;
+    } else if (suitChar == "S") {
+        suit_bits = spade_bits; suit_width = spade_width; suit_height = spade_height;
+        suitColor = TFT_WHITE;
+    } else if (suitChar == "C") {
+        suit_bits = club_bits; suit_width = club_width; suit_height = club_height;
+        suitColor = TFT_WHITE;
+    }
+    
+    int totalWidth = rankWidth + spacing + suit_width;
+    int startX = (tft.width() - totalWidth) / 2;
+
+    // Find the max height for vertical alignment calculations
+    int maxHeight = max(rankHeight, suit_height);
+
+    // Calculate the top Y position for the combined element, then move it up by 6 pixels
+    int startY = ((tft.height() - HEADER_HEIGHT - maxHeight) / 2) + HEADER_HEIGHT;
+    
+    // Draw Rank
+    // The rank should always be white.
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setCursor(startX, startY + (maxHeight - rankHeight) / 2 + 58);
+    tft.print(rank);
+    
+    // Draw Suit
+    if (suit_bits) {
+        drawSuitBitmap(startX + rankWidth + spacing, startY + (maxHeight - suit_height) / 2 - 8, suit_bits, suit_width, suit_height, suitColor);
+    }
+}
+
 void displayCurrentMessage() {
     // This function is now an initializer for the message screen.
     // It sets up the static elements and determines if scrolling is needed.
+    
+    // First, check if the message is a card symbol message
+    if (totalMessages > 0 && messageHistory[displayMessageIndex].startsWith("[CARD:")) {
+        String message = messageHistory[displayMessageIndex];
+        int rankEnd = message.indexOf(',');
+        int suitEnd = message.indexOf(']');
+        if (rankEnd != -1 && suitEnd != -1) {
+            String rank = message.substring(6, rankEnd);
+            String suit = message.substring(rankEnd + 1, suitEnd);
+            drawCardSymbol(rank, suit);
+            return;
+        }
+    }
     
     clearContentArea();
     tft.setRotation(1);
@@ -288,10 +390,10 @@ void displayCurrentMessage() {
     setScreenName("Messages");
 
     // Reset scrolling state for the new message
-    isCurrentMessageLong = false;
-    scrollOffset = 0;
-    scrollState = 0; // 0 = paused at top
-    lastScrollTime = millis();
+    messageScroll.isLong = false;
+    messageScroll.offset = 0;
+    messageScroll.state = 0; // 0 = paused at top
+    messageScroll.lastTime = millis();
 
     // --- Draw static UI elements ---
     int topY = HEADER_HEIGHT + 16;
@@ -324,18 +426,18 @@ void displayCurrentMessage() {
         String message = messageHistory[displayMessageIndex];
 
         // Find best font size that fits horizontally
-        currentFont = FONT_SANS_9; // Default to smallest
+        messageScroll.font = FONT_SANS_9; // Default to smallest
         if (calculateWrappedTextHeight(message, FONT_SANS_BOLD_12, contentWidth - 10) <= contentHeight) {
-            currentFont = FONT_SANS_BOLD_12;
+            messageScroll.font = FONT_SANS_BOLD_12;
         } else if (calculateWrappedTextHeight(message, FONT_SANS_12, contentWidth - 10) <= contentHeight) {
-            currentFont = FONT_SANS_12;
+            messageScroll.font = FONT_SANS_12;
         }
 
         // Now get the full height with the chosen font
-        totalMessageHeight = calculateWrappedTextHeight(message, currentFont, contentWidth - 10);
+        messageScroll.totalHeight = calculateWrappedTextHeight(message, messageScroll.font, contentWidth - 10);
 
-        if (totalMessageHeight > contentHeight) {
-            isCurrentMessageLong = true;
+        if (messageScroll.totalHeight > contentHeight) {
+            messageScroll.isLong = true;
         }
     }
 
@@ -365,9 +467,9 @@ void drawMessageContent() {
 
         String message = messageHistory[displayMessageIndex];
         
-        messageSprite.setFreeFont(currentFont);
+        messageSprite.setFreeFont(messageScroll.font);
         // Set cursor with scroll offset
-        messageSprite.setCursor(5, messageSprite.fontHeight() - 8 - scrollOffset);
+        messageSprite.setCursor(5, messageSprite.fontHeight() - 8 - messageScroll.offset);
 
         // Simple word wrap implementation onto the sprite
         String currentLine = "";
@@ -408,40 +510,40 @@ void drawMessageContent() {
 }
 
 void updateDisplay() {
-    if (currentPage != PAGE_MESSAGES || !isCurrentMessageLong) {
+    if (currentPage != PAGE_MESSAGES || !messageScroll.isLong) {
         return; // Only scroll on the message page for long messages
     }
 
     unsigned long time = millis();
 
     // State 0: Paused at the top
-    if (scrollState == 0) {
-        if (time - lastScrollTime > SCROLL_PAUSE) {
-            scrollState = 1; // Start scrolling down
-            lastScrollTime = time;
+    if (messageScroll.state == 0) {
+        if (time - messageScroll.lastTime > SCROLL_PAUSE) {
+            messageScroll.state = 1; // Start scrolling down
+            messageScroll.lastTime = time;
         }
     }
     // State 1: Scrolling down
-    else if (scrollState == 1) {
-        if (time - lastScrollTime > SCROLL_DELAY) {
-            scrollOffset++;
-            lastScrollTime = time;
+    else if (messageScroll.state == 1) {
+        if (time - messageScroll.lastTime > SCROLL_DELAY) {
+            messageScroll.offset++;
+            messageScroll.lastTime = time;
 
             int contentHeight = tft.height() - (HEADER_HEIGHT + 16 + 8) - 20;
-            if (scrollOffset >= totalMessageHeight - contentHeight) {
-                scrollOffset = totalMessageHeight - contentHeight;
-                scrollState = 2; // Reached bottom, start pause
-                lastScrollTime = time;
+            if (messageScroll.offset >= messageScroll.totalHeight - contentHeight) {
+                messageScroll.offset = messageScroll.totalHeight - contentHeight;
+                messageScroll.state = 2; // Reached bottom, start pause
+                messageScroll.lastTime = time;
             }
             drawMessageContent();
         }
     }
     // State 2: Paused at the bottom
-    else if (scrollState == 2) {
-        if (time - lastScrollTime > SCROLL_PAUSE) {
-            scrollOffset = 0; // Reset to top
-            scrollState = 0; // Pause at top
-            lastScrollTime = time;
+    else if (messageScroll.state == 2) {
+        if (time - messageScroll.lastTime > SCROLL_PAUSE) {
+            messageScroll.offset = 0; // Reset to top
+            messageScroll.state = 0; // Pause at top
+            messageScroll.lastTime = time;
             drawMessageContent();
         }
     }
@@ -539,14 +641,23 @@ void drawSettingsMenu() {
 
         tft.setFreeFont(FONT_SANS_9);
 
-        if (i == settingsMenuIndex) {
-            tft.setTextColor(TFT_GREEN, TFT_BLACK);
+        // If the item is "Card Type" and smart text is disabled, draw it in gray and make it unselectable.
+        if (strcmp(settingsItems[i], "Card Type") == 0 && !smartTextEnabled) {
+            tft.setTextColor(TFT_DARKGREY, TFT_BLACK);
         } else {
-            tft.setTextColor(TFT_WHITE, TFT_BLACK);
+            if (i == settingsMenuIndex) {
+                tft.setTextColor(TFT_GREEN, TFT_BLACK);
+            } else {
+                tft.setTextColor(TFT_WHITE, TFT_BLACK);
+            }
         }
 
         tft.setCursor(10, y);
-        tft.print(settingsItems[i]);
+        if (strcmp(settingsItems[i], "Card Type") == 0) {
+            tft.print("- Card Type");
+        } else {
+            tft.print(settingsItems[i]);
+        }
     }
 }
 
@@ -598,6 +709,7 @@ void drawSubMenu() {
     else if (settingsMenuIndex == 1) num_options = NUM_STANDBY_OPTIONS;
     else if (settingsMenuIndex == 3) num_options = NUM_MIRROR_OPTIONS;
     else if (settingsMenuIndex == 5) num_options = NUM_SMART_TEXT_OPTIONS;
+    else if (settingsMenuIndex == 6) num_options = NUM_CARD_TYPE_OPTIONS;
 
     // Scrolling logic
     if (num_options <= SUB_VISIBLE_ITEMS) {
@@ -644,6 +756,8 @@ void drawSubMenu() {
         draw_items(mirrorOptions, NUM_MIRROR_OPTIONS);
     } else if (settingsMenuIndex == 5) { // Smart Text
         draw_items(smartTextOptions, NUM_SMART_TEXT_OPTIONS);
+    } else if (settingsMenuIndex == 6) { // Card Type
+        draw_items(cardTypeOptions, NUM_CARD_TYPE_OPTIONS);
     }
 }
 

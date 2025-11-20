@@ -67,9 +67,10 @@ const char* settingsItems[] = {
   "Mirror Screen",
   "Button Actions",
   "Smart Text",
+  "Card Type",
   "Exit"
 };
-const int NUM_SETTINGS_ITEMS = 7;
+const int NUM_SETTINGS_ITEMS = 8;
 
 // Brightness options
 const char* brightnessOptions[] = {
@@ -99,13 +100,16 @@ const char* smartTextOptions[] = {"Off", "On"};
 const int NUM_SMART_TEXT_OPTIONS = 2;
 bool smartTextEnabled = false;
 
-// Message Scrolling
-bool isCurrentMessageLong = false;
-int scrollOffset = 0;
-unsigned long lastScrollTime = 0;
-int scrollState = 0; // 0 = paused at top, 1 = scrolling down, 2 = paused at bottom
-int totalMessageHeight = 0;
-const GFXfont* currentFont = FONT_SANS_9;
+// Card Type options
+const char* cardTypeOptions[] = {"Words", "Symbols"};
+const int NUM_CARD_TYPE_OPTIONS = 2;
+CardDisplayType cardTypeSelection = CARD_TYPE_WORDS;
+
+// Message Scrolling State
+ScrollState messageScroll = {
+  .isLong = false, .offset = 0, .lastTime = 0, 
+  .state = 0, .totalHeight = 0, .font = FONT_SANS_9
+};
 
 
 // ============================================================================ 
@@ -164,6 +168,7 @@ void setup() {
     loadStandbySetting();
     loadMirrorSetting();
     loadSmartTextSetting();
+    loadCardTypeSetting();
 
     // Initialize display
     initializeDisplay();

@@ -132,6 +132,34 @@ void saveSmartTextSetting() {
     Serial.println(smartTextEnabled ? "On" : "Off");
 }
 
+// ============================================================================
+// CARD TYPE SETTINGS
+// ============================================================================
+void loadCardTypeSetting() {
+    EEPROM.begin(EEPROM_SIZE);
+    byte savedCardType = EEPROM.read(CARD_TYPE_ADDR);
+    
+    if (savedCardType == 0 || savedCardType == 1) {
+        cardTypeSelection = (CardDisplayType)savedCardType;
+        Serial.print("Loaded Card Type from EEPROM: ");
+        Serial.println(cardTypeSelection == CARD_TYPE_WORDS ? "Words" : "Symbols");
+    } else {
+        cardTypeSelection = CARD_TYPE_WORDS; // Default to Words
+        EEPROM.write(CARD_TYPE_ADDR, cardTypeSelection);
+        Serial.println("Using default Card Type: Words");
+    }
+    EEPROM.end();
+}
+
+void saveCardTypeSetting() {
+    EEPROM.begin(EEPROM_SIZE);
+    EEPROM.write(CARD_TYPE_ADDR, cardTypeSelection);
+    EEPROM.commit();
+    EEPROM.end();
+    Serial.print("Saved Card Type to EEPROM: ");
+    Serial.println(cardTypeSelection == CARD_TYPE_WORDS ? "Words" : "Symbols");
+}
+
 
 // ============================================================================
 // SETTINGS MENU NAVIGATION LOGIC
@@ -169,6 +197,8 @@ void enterSubMenu() {
         subMenuIndex = (int)mirrorMessages;
     } else if (settingsMenuIndex == 5) { // Smart Text
         subMenuIndex = (int)smartTextEnabled;
+    } else if (settingsMenuIndex == 6) { // Card Type
+        subMenuIndex = (int)cardTypeSelection;
     }
     drawSubMenu();
 }
@@ -197,6 +227,11 @@ void cycleSubMenuOption() {
             subMenuIndex = (subMenuIndex + 1) % NUM_SMART_TEXT_OPTIONS;
             smartTextEnabled = (bool)subMenuIndex;
             saveSmartTextSetting();
+            break;
+        case 6: // Card Type
+            subMenuIndex = (subMenuIndex + 1) % NUM_CARD_TYPE_OPTIONS;
+            cardTypeSelection = (CardDisplayType)subMenuIndex;
+            saveCardTypeSetting();
             break;
         default:
             // Do nothing for unimplemented sub-menus

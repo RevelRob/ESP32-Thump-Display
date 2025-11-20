@@ -20,6 +20,10 @@ void saveMirrorSetting();
 void loadSmartTextSetting();
 void saveSmartTextSetting();
 
+// Card Type
+void loadCardTypeSetting();
+void saveCardTypeSetting();
+
 // Menu Navigation
 void enterSettingsMenu();
 void exitSettingsMenu();
