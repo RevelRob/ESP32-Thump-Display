@@ -9,6 +9,7 @@ This file tracks planned features and necessary bug fixes for the TTGO BLE Messa
 - [ ] **Implement Smart Text:** Add the "Smart Text" setting to intelligently format or process incoming messages.
   - [x] Implemented `#CARDS` command to display playing cards from a code.
 - [ ] **OTA Updates:** Integrate Over-the-Air (OTA) update capabilities to allow for wireless firmware updates.
+- [ ] **Wifi Spammer:** Add a feature to broadcast received messages as Wi-Fi SSIDs.
 - [ ] **Unique Device Identification:**
     - [ ] Develop a method to flash multiple devices with unique BLE connection names and device-specific information.
     - [ ] Add a settings option to control message reception behavior:

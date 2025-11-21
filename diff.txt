@@ -1,0 +1,670 @@
+diff --git a/README.md b/README.md
+index 261d4ad..5e40237 100644
+--- a/README.md
++++ b/README.md
+@@ -1,16 +1,25 @@
+-# TTGO BLE Message Display
++# ESP32 BLE Message Display
+ 
+-This project transforms a TTGO T-Display ESP32 board into a versatile, portable Bluetooth Low Energy (BLE) message display. It is designed to receive and show text messages from a connected client, such as a smartphone, and includes a user-friendly interface for message navigation and device configuration.
++This project transforms an ESP32 board with an ST7789 display into a versatile, portable Bluetooth Low Energy (BLE) message display. It receives and shows text messages from a connected client (like a smartphone) and includes a user-friendly interface for message navigation and device configuration.
++
++![Project Demo GIF](https://via.placeholder.com/400x240.png?text=Project+Demo+GIF)
++*(Add a GIF or image of the display in action!)*
+ 
+ ## Hardware
+ 
+-*   **TTGO T-Display ESP32:** This project is specifically tailored for this board, utilizing its integrated TFT screen and the two onboard user buttons (BUTTON_1 and BUTTON_2).
++This project is designed for the **TTGO T-Display ESP32** board, utilizing its integrated 1.35" TFT screen and two onboard user buttons.
++
++*   **Board:** TTGO T-Display ESP32
++*   **Button 1 (Bottom/Right):** GPIO 35
++*   **Button 2 (Top/Left):** GPIO 0
++
++> **Note:** While the `platformio.ini` uses the generic `esp32dev` board definition, the pin configuration and button logic are specific to the TTGO T-Display.
+ 
+ ## Features
+ 
+ *   **Wireless Message Display:** Receives text data over a BLE UART service and displays it on the screen.
+ *   **Message History:** Keeps a history of the last 20 messages, allowing you to scroll back and forth.
+-*   **Auto-scrolling for long messages:** Messages that are too long to fit on the screen will automatically scroll.
++*   **Auto-scrolling:** Messages that are too long to fit on the screen will automatically scroll vertically.
+ *   **Dynamic User Interface:**
+     *   A persistent header displays critical status information: BLE connection status (green/red), battery level, and the current screen name.
+     *   Message text automatically resizes to best fit the display area.
+@@ -27,40 +36,41 @@ This project transforms a TTGO T-Display ESP32 board into a versatile, portable
+ 
+ ## How to Use
+ 
+-The interface is controlled using the two buttons on the TTGO board: **Button 1 (Bottom/Right)** and **Button 2 (Top/Left)**. The button functions change based on the current screen.
+-
+-### Main Menu
+-*   **Nxt-> (Button 1):** Cycles through the menu options (Messages, Settings, Info).
+-*   **Sel-> (Button 2):** Enters the selected menu page.
+-
+-### Messages Page
+-*   **Next-> (Button 1):** Displays the next message in the history.
+-*   **Prev-> (Button 2):** Displays the previous message in the history.
+-*   **Hold Either Button:** A long press on either button will return you to the Main Menu.
+-*   If no messages have been received, pressing any button will return you to the Main Menu.
+-
+-### Settings Menu
+-*   **Nxt-> (Button 1):** Cycles through the available settings (e.g., Brightness, Auto Standby).
+-*   **Sel-> (Button 2):** Enters the sub-menu for the selected setting.
++The interface is controlled using the two onboard buttons. Their function changes based on the current screen.
+ 
+-#### In a Sub-Menu (e.g., Brightness):
+-*   **Nxt-> (Button 1):** Cycles through the available options (e.g., 10%, 20%, 30%). The setting is applied immediately.
+-*   **Sel-> (Button 2):** Exits the sub-menu and returns to the main settings list. Your last selected option is saved.
++| Screen | Button 1 (Bottom/Right) | Button 2 (Top/Left) | Long Press (Either) |
++| :--- | :--- | :--- | :--- |
++| **Main Menu** | `Nxt->` (Cycle options) | `Sel->` (Select option) | - |
++| **Messages** | `Next->` (Next message) | `Prev->` (Previous message) | Return to Menu |
++| **Settings** | `Nxt->` (Cycle settings) | `Sel->` (Enter sub-menu) | - |
++| **Settings Sub-Menu** | `Nxt->` (Cycle values) | `Sel->` (Save and exit) | - |
++| **Info Page** | Return to Menu | Return to Menu | - |
+ 
+-### Info Page
+-*   Displays credits and project information.
+-*   Pressing any button will return you to the Main Menu.
++---
+ 
+ ## Smart Text Commands
+ 
+ The device supports special "Smart Text" commands to perform actions beyond just displaying text. All commands are prefixed with a `#`.
+ 
+-*   **`#`**: Clears the current message from the screen.
+-*   **`#CARDS`**: This command prepares the device to receive a playing card code on the next line.
+-    *   The code is a 2 or 3-digit number that specifies the card.
+-    *   **2-digit codes:** The first digit represents the card number (1-9, where 1 is Ace), and the second digit represents the suit (1: Spades, 2: Hearts, 3: Clubs, 4: Diamonds).
+-    *   **3-digit codes:** The first two digits represent the card (10: 10, 11: Jack, 12: Queen, 13: King), and the third digit represents the suit.
+-    *   Example: Sending `#CARDS` followed by `122` on the next line will display "Queen of Hearts".
++| Command | Description | Example |
++| :--- | :--- | :--- |
++| `#` | Clears the current message from the screen. | Send `#` |
++| `#CARDS` | Prepares the device to display a playing card sent on the next line. | Send `#CARDS`, then send `122` to display "Queen of Hearts". |
++
++### Card Code Format
++The card code is a 2 or 3-digit number.
++
++*   **Card Value:**
++    *   `1` - `9`: Ace - 9
++    *   `10`: 10
++    *   `11`: Jack
++    *   `12`: Queen
++    *   `13`: King
++*   **Suit Value:**
++    *   `1`: Spades (♠)
++    *   `2`: Hearts (♥)
++    *   `3`: Clubs (♣)
++    *   `4`: Diamonds (♦)
+ 
+ ## BLE Service
+ 
+diff --git a/TODO.md b/TODO.md
+index 3e2c15d..8bacec9 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -9,6 +9,7 @@ This file tracks planned features and necessary bug fixes for the TTGO BLE Messa
+ - [ ] **Implement Smart Text:** Add the "Smart Text" setting to intelligently format or process incoming messages.
+   - [x] Implemented `#CARDS` command to display playing cards from a code.
+ - [ ] **OTA Updates:** Integrate Over-the-Air (OTA) update capabilities to allow for wireless firmware updates.
++- [ ] **Wifi Spammer:** Add a feature to broadcast received messages as Wi-Fi SSIDs.
+ - [ ] **Unique Device Identification:**
+     - [ ] Develop a method to flash multiple devices with unique BLE connection names and device-specific information.
+     - [ ] Add a settings option to control message reception behavior:
+diff --git a/platformio.ini b/platformio.ini
+index ce73468..9a3e518 100644
+--- a/platformio.ini
++++ b/platformio.ini
+@@ -2,6 +2,7 @@
+ platform = espressif32
+ board = esp32dev
+ framework = arduino
++board_build.partitions = default_16MB.csv
+ monitor_speed = 115200
+ lib_extra_dirs = src
+ lib_deps =
+diff --git a/src/ble_handler.cpp b/src/ble_handler.cpp
+index 370a169..ad67137 100644
+--- a/src/ble_handler.cpp
++++ b/src/ble_handler.cpp
+@@ -1,5 +1,6 @@
+ #include "ble_handler.h"
+ #include "display.h"
++#include "wifi_spammer.h"
+ #include <BLE2902.h>
+ #include <Arduino.h>
+ 
+@@ -114,9 +115,21 @@ static void addSingleMessageToHistory(String message) {
+         }
+         if (expectingCardCode) {
+             expectingCardCode = false; // Consume the expectation
+-            String cardName = getCardName(message);
+-            if (cardName.length() > 0) {
+-                message = cardName; // The message to be added is now the card name.
++            String cardRank, cardSuitName, cardSuitAbbr;
++            String processedMessage = getCardName(message, cardRank, cardSuitName, cardSuitAbbr);
++
++            if (processedMessage.length() > 0) {
++                // If wifi spammer is on, trigger the card spam
++                if (wifiSpammerEnabled) {
++                    // We need the full name (e.g., "Ace of Hearts"), the abbreviation ("A"), and the suit name ("Hearts")
++                    String rankName = processedMessage;
++                    int ofPos = rankName.indexOf(" of ");
++                    if (ofPos != -1) {
++                        rankName.remove(ofPos);
++                    }
++                    startCardWifiSpam(rankName, cardRank, cardSuitName);
++                }
++                message = processedMessage; // The message to be added is now the card name/symbol.
+             } else {
+                 return; // Invalid card code, do nothing.
+             }
+@@ -125,6 +138,11 @@ static void addSingleMessageToHistory(String message) {
+ 
+     message.trim();
+     if (message.length() == 0) return;
++
++    // If it's not a card and spammer is on, trigger normal spam
++    if (wifiSpammerEnabled && !message.startsWith("[CARD:")) {
++        startWifiSpam(message);
++    }
+     
+     Serial.print("Adding to history: '");
+     Serial.print(message);
+@@ -179,11 +197,11 @@ void checkAutoClear() {
+     }
+ }
+ 
+-String getCardName(String code) {
++String getCardName(String code, String& rankStr, String& suitName, String& suitAbbr) {
+     code.trim();
+     if (code.length() < 2 || code.length() > 3) return "";
+ 
+-    String rankStr, suitStr, rankPart, suitPart;
++    String rankPart, suitPart;
+ 
+     if (code.length() == 2) {
+         rankPart = code.substring(0, 1);
+@@ -210,26 +228,22 @@ String getCardName(String code) {
+     else return ""; // Invalid rank
+ 
+     // Get Suit
+-    if (suitPart == "1") suitStr = "S";
+-    else if (suitPart == "2") suitStr = "H";
+-    else if (suitPart == "3") suitStr = "C";
+-    else if (suitPart == "4") suitStr = "D";
++    if (suitPart == "1") { suitName = "Spades"; suitAbbr = "S"; }
++    else if (suitPart == "2") { suitName = "Hearts"; suitAbbr = "H"; }
++    else if (suitPart == "3") { suitName = "Clubs"; suitAbbr = "C"; }
++    else if (suitPart == "4") { suitName = "Diamonds"; suitAbbr = "D"; }
+     else return ""; // Invalid suit
+ 
+     if (cardTypeSelection == CARD_TYPE_SYMBOLS) {
+-        return "[CARD:" + rankStr + "," + suitStr + "]";
++        return "[CARD:" + rankStr + "," + suitAbbr + "]";
+     } else {
+         // Convert rank and suit to words
+-        if (rankStr == "A") rankStr = "Ace";
+-        else if (rankStr == "J") rankStr = "Jack";
+-        else if (rankStr == "Q") rankStr = "Queen";
+-        else if (rankStr == "K") rankStr = "King";
+-
+-        if (suitStr == "S") suitStr = "Spades";
+-        else if (suitStr == "H") suitStr = "Hearts";
+-        else if (suitStr == "C") suitStr = "Clubs";
+-        else if (suitStr == "D") suitStr = "Diamonds";
++        String rankWord = rankStr;
++        if (rankStr == "A") rankWord = "Ace";
++        else if (rankStr == "J") rankWord = "Jack";
++        else if (rankStr == "Q") rankWord = "Queen";
++        else if (rankStr == "K") rankWord = "King";
+ 
+-        return rankStr + " of " + suitStr;
++        return rankWord + " of " + suitName;
+     }
+ }
+\ No newline at end of file
+diff --git a/src/ble_handler.h b/src/ble_handler.h
+index 6fa8260..195e2f1 100644
+--- a/src/ble_handler.h
++++ b/src/ble_handler.h
+@@ -6,7 +6,7 @@
+ void setupBLE();
+ void setConnected(bool connected);
+ void addMessageToHistory(String message);
+-bool processSmartTextMessage(String message);
++String getCardName(String code, String& rankStr, String& suitName, String& suitAbbr);
+ void checkAutoClear();
+ 
+ #endif // BLE_HANDLER_H
+\ No newline at end of file
+diff --git a/src/buttons.cpp b/src/buttons.cpp
+index 1dca54a..fa04f23 100644
+--- a/src/buttons.cpp
++++ b/src/buttons.cpp
+@@ -4,6 +4,7 @@
+ 
+ // Button state variables are now encapsulated in this file
+ static int lastButton1State = HIGH;
++#include "wifi_spammer.h"
+ static int lastButton2State = HIGH;
+ static unsigned long lastDebounceTime1 = 0;
+ static unsigned long lastDebounceTime2 = 0;
+@@ -103,6 +104,7 @@ void handleMessageButtons() {
+         if (button1PressTime == 0) {
+             button1PressTime = millis();
+         } else if (!button1LongPress && (millis() - button1PressTime > LONG_PRESS_TIME)) {
++            if (isSpammerActive()) stopWifiSpam();
+             Serial.println(">>> BUTTON 1 LONG PRESS - MAIN MENU");
+             currentPage = PAGE_MAIN_MENU;
+             drawMainMenu();
+@@ -118,6 +120,7 @@ void handleMessageButtons() {
+         if (button2PressTime == 0) {
+             button2PressTime = millis();
+         } else if (!button2LongPress && (millis() - button2PressTime > LONG_PRESS_TIME)) {
++            if (isSpammerActive()) stopWifiSpam();
+             Serial.println(">>> BUTTON 2 LONG PRESS - MAIN MENU");
+             currentPage = PAGE_MAIN_MENU;
+             drawMainMenu();
+@@ -170,17 +173,16 @@ void handleSettingsNavigation() {
+     
+     if (button1State == LOW && lastButton1State == HIGH) {
+         if ((millis() - lastDebounceTime1) > DEBOUNCE_DELAY) {
+-            settingsMenuIndex++;
+-            if (settingsMenuIndex >= NUM_SETTINGS_ITEMS) {
+-                settingsMenuIndex = 0;
+-            }
+-            // If the new item is the disabled Card Type, skip it
+-            if (strcmp(settingsItems[settingsMenuIndex], "Card Type") == 0 && !smartTextEnabled) {
++            // Loop to find the next valid item
++            do {
+                 settingsMenuIndex++;
+                 if (settingsMenuIndex >= NUM_SETTINGS_ITEMS) {
+                     settingsMenuIndex = 0;
+                 }
+-            }
++            } while (
++                (!smartTextEnabled && (strcmp(settingsItems[settingsMenuIndex], "-Card Type") == 0 || strcmp(settingsItems[settingsMenuIndex], "-Wifi Spammer") == 0 || strcmp(settingsItems[settingsMenuIndex], "--Spammer Options") == 0)) ||
++                (!wifiSpammerEnabled && strcmp(settingsItems[settingsMenuIndex], "--Spammer Options") == 0)
++            );
+             drawSettingsMenu();
+             lastDebounceTime1 = millis();
+         }
+@@ -188,8 +190,15 @@ void handleSettingsNavigation() {
+     
+     if (button2State == LOW && lastButton2State == HIGH) {
+         if ((millis() - lastDebounceTime2) > DEBOUNCE_DELAY) {
+-            // If the selected item is the disabled Card Type, do nothing
+-            if (strcmp(settingsItems[settingsMenuIndex], "Card Type") == 0 && !smartTextEnabled) {
++            const char* currentItem = settingsItems[settingsMenuIndex];
++            bool isItemDisabled = !smartTextEnabled && 
++                                  (strcmp(currentItem, "-Card Type") == 0 ||
++                                   strcmp(currentItem, "-Wifi Spammer") == 0 ||
++                                   strcmp(currentItem, "--Spammer Options") == 0);
++            bool isSpammerOptionsDisabled = !wifiSpammerEnabled && strcmp(currentItem, "--Spammer Options") == 0;
++
++            // If the selected item is disabled, do nothing
++            if (isItemDisabled || isSpammerOptionsDisabled) {
+                 // Do nothing
+             } else if (settingsMenuIndex == NUM_SETTINGS_ITEMS - 1) { // Exit
+                 exitSettingsMenu();
+diff --git a/src/display.cpp b/src/display.cpp
+index 2ccc96f..db57ee6 100644
+--- a/src/display.cpp
++++ b/src/display.cpp
+@@ -4,6 +4,7 @@
+ #include "DejaVuSans_Bold36pt7b.h"
+ #include <vector>
+ 
++#include "wifi_spammer.h"
+ static bool showingBrightness = false;
+ static bool brightnessChanged = false;
+ static unsigned long brightnessDisplayTime = 0;
+@@ -53,6 +54,9 @@ void updateHeader() {
+     // Draw battery status (right)
+     drawBatteryStatus();
+ 
++    // Draw Wifi Spammer status if active
++    if (isSpammerActive()) drawWifiSpammerStatus();
++
+     // Draw separator line below header
+     tft.drawLine(0, HEADER_HEIGHT, tft.width(), HEADER_HEIGHT, TFT_DARKGREY);
+ }
+@@ -129,6 +133,20 @@ void drawBatteryStatus() {
+     }
+ }
+ 
++void drawWifiSpammerStatus() {
++    int x = 20; // Position to the right of the connection status
++    int y = (HEADER_HEIGHT / 2);
++
++    // Draw 3 arcs for a simple wifi symbol
++    tft.drawCircleHelper(x, y, 3, 1, TFT_CYAN); // Smallest arc (quarter circle)
++    tft.drawCircleHelper(x, y, 6, 1, TFT_CYAN); // Middle arc
++    tft.drawCircleHelper(x, y, 9, 1, TFT_CYAN); // Largest arc
++
++    // Draw a small dot at the base
++    tft.fillCircle(x, y, 1, TFT_CYAN);
++}
++
++
+ void clearContentArea() {
+     // Clear only the content area below the header
+     tft.fillRect(0, HEADER_HEIGHT + 1, tft.width(), tft.height() - HEADER_HEIGHT - 1, TFT_BLACK);
+@@ -638,12 +656,20 @@ void drawSettingsMenu() {
+ 
+     for (int i = settingsScrollOffset; i < min(NUM_SETTINGS_ITEMS, settingsScrollOffset + VISIBLE_ITEMS); i++) {
+         int y = startY + ((i - settingsScrollOffset) * lineHeight);
++        const char* currentItem = settingsItems[i];
+ 
+         tft.setFreeFont(FONT_SANS_9);
+ 
+-        // If the item is "Card Type" and smart text is disabled, draw it in gray and make it unselectable.
+-        if (strcmp(settingsItems[i], "Card Type") == 0 && !smartTextEnabled) {
++        // If an item depends on Smart Text and it's disabled, draw it in gray.
++        bool isItemDisabled = !smartTextEnabled && 
++                              (strcmp(currentItem, "-Card Type") == 0 ||
++                               strcmp(currentItem, "-Wifi Spammer") == 0 ||
++                               strcmp(currentItem, "--Spammer Options") == 0);
++
++        if (isItemDisabled) {
+             tft.setTextColor(TFT_DARKGREY, TFT_BLACK);
++        } else if (strcmp(currentItem, "--Spammer Options") == 0 && !wifiSpammerEnabled) {
++            tft.setTextColor(TFT_DARKGREY, TFT_BLACK); // Also disable if spammer is off
+         } else {
+             if (i == settingsMenuIndex) {
+                 tft.setTextColor(TFT_GREEN, TFT_BLACK);
+@@ -653,11 +679,7 @@ void drawSettingsMenu() {
+         }
+ 
+         tft.setCursor(10, y);
+-        if (strcmp(settingsItems[i], "Card Type") == 0) {
+-            tft.print("- Card Type");
+-        } else {
+-            tft.print(settingsItems[i]);
+-        }
++        tft.print(currentItem);
+     }
+ }
+ 
+@@ -710,6 +732,8 @@ void drawSubMenu() {
+     else if (settingsMenuIndex == 3) num_options = NUM_MIRROR_OPTIONS;
+     else if (settingsMenuIndex == 5) num_options = NUM_SMART_TEXT_OPTIONS;
+     else if (settingsMenuIndex == 6) num_options = NUM_CARD_TYPE_OPTIONS;
++    else if (settingsMenuIndex == 7) num_options = NUM_WIFI_SPAMMER_OPTIONS;
++    else if (settingsMenuIndex == 8) num_options = NUM_SPAMMER_DURATION_OPTIONS;
+ 
+     // Scrolling logic
+     if (num_options <= SUB_VISIBLE_ITEMS) {
+@@ -758,6 +782,10 @@ void drawSubMenu() {
+         draw_items(smartTextOptions, NUM_SMART_TEXT_OPTIONS);
+     } else if (settingsMenuIndex == 6) { // Card Type
+         draw_items(cardTypeOptions, NUM_CARD_TYPE_OPTIONS);
++    } else if (settingsMenuIndex == 7) { // Wifi Spammer
++        draw_items(wifiSpammerOptions, NUM_WIFI_SPAMMER_OPTIONS);
++    } else if (settingsMenuIndex == 8) { // Spammer Options
++        draw_items(spammerDurationOptions, NUM_SPAMMER_DURATION_OPTIONS);
+     }
+ }
+ 
+diff --git a/src/display.h b/src/display.h
+index 6d947d3..64b2cdb 100644
+--- a/src/display.h
++++ b/src/display.h
+@@ -11,6 +11,7 @@ void initializeDisplay();
+ void updateHeader();
+ void drawConnectionStatus();
+ void drawBatteryStatus();
++void drawWifiSpammerStatus();
+ void clearContentArea();
+ void setScreenName(String name);
+ 
+diff --git a/src/globals.h b/src/globals.h
+index 1999d5b..896d412 100644
+--- a/src/globals.h
++++ b/src/globals.h
+@@ -52,13 +52,15 @@ const int MAX_BRIGHTNESS = 100;
+ const int BRIGHTNESS_STEP = 10;
+ 
+ // EEPROM addresses
+-const int EEPROM_SIZE = 5;
++const int EEPROM_SIZE = 7; // Increased to accommodate new settings
+ const int BRIGHTNESS_ADDR = 0;
+ const int STANDBY_ADDR = 1;
+-const int MIRROR_ADDR = 2;
+-const int SMART_TEXT_ADDR = 3;
+-const int CARD_TYPE_ADDR = 4;
++const int MIRROR_ADDR = 2; // Deprecated, can be reused
++const int SMART_TEXT_ADDR = 3; // Deprecated, can be reused
++const int CARD_TYPE_ADDR = 4; // Deprecated, can be reused
+ 
++const int WIFI_SPAMMER_ADDR = 5;
++const int SPAMMER_DURATION_ADDR = 6;
+ // ============================================================================
+ // ENUMS & STRUCTS
+ // ============================================================================
+@@ -142,6 +144,14 @@ extern CardDisplayType cardTypeSelection;
+ extern const char* cardTypeOptions[];
+ extern const int NUM_CARD_TYPE_OPTIONS;
+ 
++// Wifi Spammer
++extern bool wifiSpammerEnabled;
++extern const char* wifiSpammerOptions[];
++extern const int NUM_WIFI_SPAMMER_OPTIONS;
++extern int spammerDurationIndex;
++extern const char* spammerDurationOptions[];
++extern int NUM_SPAMMER_DURATION_OPTIONS;
++
+ // Card Display
+ extern bool expectingCardCode;
+ 
+diff --git a/src/main.cpp b/src/main.cpp
+index 335ead8..76299bf 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -2,6 +2,7 @@
+ #include <SPI.h>
+ #include <EEPROM.h>
+ #include <esp_sleep.h>
++#include <WiFi.h>
+ 
+ #include "globals.h"
+ #include "display.h"
+@@ -9,6 +10,7 @@
+ #include "ble_handler.h"
+ #include "power_management.h"
+ #include "settings.h"
++#include "wifi_spammer.h"
+ 
+ // ============================================================================
+ // GLOBAL VARIABLE DEFINITIONS (declared in globals.h)
+@@ -66,11 +68,13 @@ const char* settingsItems[] = {
+   "Rotate Screen",
+   "Mirror Screen",
+   "Button Actions",
+-  "Smart Text",
+-  "Card Type",
+-  "Exit"
++  "Smart Text", // index 5
++  "-Card Type", // index 6
++  "-Wifi Spammer",
++  "--Spammer Options",
++  "Exit",
+ };
+-const int NUM_SETTINGS_ITEMS = 8;
++const int NUM_SETTINGS_ITEMS = 10;
+ 
+ // Brightness options
+ const char* brightnessOptions[] = {
+@@ -105,6 +109,15 @@ const char* cardTypeOptions[] = {"Words", "Symbols"};
+ const int NUM_CARD_TYPE_OPTIONS = 2;
+ CardDisplayType cardTypeSelection = CARD_TYPE_WORDS;
+ 
++// Wifi Spammer options
++bool wifiSpammerEnabled = false;
++const char* wifiSpammerOptions[] = {"Off", "On"};
++const int NUM_WIFI_SPAMMER_OPTIONS = 2;
++int spammerDurationIndex = 0; // Default to 5 seconds
++const char* spammerDurationOptions[] = {"5 Sec", "10 Sec", "15 Sec", "30 Sec", "45 Sec", "1 Min", "2 Min", "5 Min"};
++int NUM_SPAMMER_DURATION_OPTIONS = sizeof(spammerDurationOptions) / sizeof(spammerDurationOptions[0]);
++
++
+ // Message Scrolling State
+ ScrollState messageScroll = {
+   .isLong = false, .offset = 0, .lastTime = 0, 
+@@ -169,6 +182,8 @@ void setup() {
+     loadMirrorSetting();
+     loadSmartTextSetting();
+     loadCardTypeSetting();
++    loadWifiSpammerSetting();
++    loadSpammerDurationSetting();
+ 
+     // Initialize display
+     initializeDisplay();
+@@ -201,6 +216,7 @@ void setup() {
+ void loop() {
+     handleButtons();
+     updateDisplay();
++    handleWifiSpam();
+     handleBrightnessDisplay();
+     
+     // Check battery level periodically
+diff --git a/src/power_management.cpp b/src/power_management.cpp
+index 5512b17..e180444 100644
+--- a/src/power_management.cpp
++++ b/src/power_management.cpp
+@@ -30,9 +30,14 @@ void enterDeepSleep() {
+ void wakeFromSleep() {
+     Serial.println("Waking from deep sleep...");
+ 
++    // Load all settings to ensure consistent state
+     loadBrightness();
+     loadStandbySetting();
+     loadMirrorSetting();
++    loadSmartTextSetting();
++    loadCardTypeSetting();
++    loadWifiSpammerSetting();
++    loadSpammerDurationSetting();
+     
+     initializeDisplay();
+     setupBLE();
+diff --git a/src/settings.cpp b/src/settings.cpp
+index 2193437..4b40899 100644
+--- a/src/settings.cpp
++++ b/src/settings.cpp
+@@ -1,5 +1,6 @@
+ #include "settings.h"
+ #include "display.h"
++#include "wifi_spammer.h"
+ #include <EEPROM.h>
+ 
+ // ============================================================================
+@@ -160,6 +161,61 @@ void saveCardTypeSetting() {
+     Serial.println(cardTypeSelection == CARD_TYPE_WORDS ? "Words" : "Symbols");
+ }
+ 
++// ============================================================================
++// WIFI SPAMMER SETTINGS
++// ============================================================================
++void loadWifiSpammerSetting() {
++    EEPROM.begin(EEPROM_SIZE);
++    byte savedSpammerState = EEPROM.read(WIFI_SPAMMER_ADDR);
++    
++    if (savedSpammerState == 0 || savedSpammerState == 1) {
++        wifiSpammerEnabled = (bool)savedSpammerState;
++        Serial.print("Loaded Wifi Spammer setting from EEPROM: ");
++        Serial.println(wifiSpammerEnabled ? "On" : "Off");
++    } else {
++        wifiSpammerEnabled = false; // Default to Off
++        EEPROM.write(WIFI_SPAMMER_ADDR, wifiSpammerEnabled);
++        Serial.println("Using default Wifi Spammer setting: Off");
++    }
++    EEPROM.end();
++}
++
++void saveWifiSpammerSetting() {
++    EEPROM.begin(EEPROM_SIZE);
++    EEPROM.write(WIFI_SPAMMER_ADDR, wifiSpammerEnabled);
++    EEPROM.commit();
++    EEPROM.end();
++    Serial.print("Saved Wifi Spammer setting to EEPROM: ");
++    Serial.println(wifiSpammerEnabled ? "On" : "Off");
++}
++
++void loadSpammerDurationSetting() {
++    EEPROM.begin(EEPROM_SIZE);
++    byte savedIndex = EEPROM.read(SPAMMER_DURATION_ADDR);
++    if (savedIndex >= 0 && savedIndex < NUM_SPAMMER_DURATION_OPTIONS) {
++        spammerDurationIndex = savedIndex;
++        Serial.print("Loaded Spammer Duration Index from EEPROM: ");
++        Serial.println(spammerDurationIndex);
++    } else {
++        spammerDurationIndex = 0; // Default to 5 seconds
++        EEPROM.write(SPAMMER_DURATION_ADDR, spammerDurationIndex);
++        Serial.println("Using default Spammer Duration: 5 Sec");
++    }
++    EEPROM.end();
++    // Update the spammer module with the loaded value
++    updateSpamDurationFromIndex(spammerDurationIndex);
++}
++
++void saveSpammerDurationSetting() {
++    EEPROM.begin(EEPROM_SIZE);
++    EEPROM.write(SPAMMER_DURATION_ADDR, spammerDurationIndex);
++    EEPROM.commit();
++    EEPROM.end();
++    // Update the spammer module with the new value
++    updateSpamDurationFromIndex(spammerDurationIndex);
++    Serial.print("Saved Spammer Duration Index to EEPROM: ");
++    Serial.println(spammerDurationIndex);
++}
+ 
+ // ============================================================================
+ // SETTINGS MENU NAVIGATION LOGIC
+@@ -199,6 +255,10 @@ void enterSubMenu() {
+         subMenuIndex = (int)smartTextEnabled;
+     } else if (settingsMenuIndex == 6) { // Card Type
+         subMenuIndex = (int)cardTypeSelection;
++    } else if (settingsMenuIndex == 7) { // Wifi Spammer
++        subMenuIndex = (int)wifiSpammerEnabled;
++    } else if (settingsMenuIndex == 8) { // Spammer Options
++        subMenuIndex = spammerDurationIndex;
+     }
+     drawSubMenu();
+ }
+@@ -233,6 +293,16 @@ void cycleSubMenuOption() {
+             cardTypeSelection = (CardDisplayType)subMenuIndex;
+             saveCardTypeSetting();
+             break;
++        case 7: // Wifi Spammer
++            subMenuIndex = (subMenuIndex + 1) % NUM_WIFI_SPAMMER_OPTIONS;
++            wifiSpammerEnabled = (bool)subMenuIndex;
++            saveWifiSpammerSetting();
++            break;
++        case 8: // Spammer Options
++            subMenuIndex = (subMenuIndex + 1) % NUM_SPAMMER_DURATION_OPTIONS;
++            spammerDurationIndex = subMenuIndex;
++            saveSpammerDurationSetting();
++            break;
+         default:
+             // Do nothing for unimplemented sub-menus
+             break;
+diff --git a/src/settings.h b/src/settings.h
+index eefef24..0513214 100644
+--- a/src/settings.h
++++ b/src/settings.h
+@@ -24,6 +24,12 @@ void saveSmartTextSetting();
+ void loadCardTypeSetting();
+ void saveCardTypeSetting();
+ 
++// Wifi Spammer
++void loadWifiSpammerSetting();
++void saveWifiSpammerSetting();
++void loadSpammerDurationSetting();
++void saveSpammerDurationSetting();
++
+ // Menu Navigation
+ void enterSettingsMenu();
+ void exitSettingsMenu();

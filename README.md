@@ -1,16 +1,25 @@
-# TTGO BLE Message Display
+# ESP32 BLE Message Display
 
-This project transforms a TTGO T-Display ESP32 board into a versatile, portable Bluetooth Low Energy (BLE) message display. It is designed to receive and show text messages from a connected client, such as a smartphone, and includes a user-friendly interface for message navigation and device configuration.
+This project transforms an ESP32 board with an ST7789 display into a versatile, portable Bluetooth Low Energy (BLE) message display. It receives and shows text messages from a connected client (like a smartphone) and includes a user-friendly interface for message navigation and device configuration.
+
+![Project Demo GIF](https://via.placeholder.com/400x240.png?text=Project+Demo+GIF)
+*(Add a GIF or image of the display in action!)*
 
 ## Hardware
 
-*   **TTGO T-Display ESP32:** This project is specifically tailored for this board, utilizing its integrated TFT screen and the two onboard user buttons (BUTTON_1 and BUTTON_2).
+This project is designed for the **TTGO T-Display ESP32** board, utilizing its integrated 1.35" TFT screen and two onboard user buttons.
+
+*   **Board:** TTGO T-Display ESP32
+*   **Button 1 (Bottom/Right):** GPIO 35
+*   **Button 2 (Top/Left):** GPIO 0
+
+> **Note:** While the `platformio.ini` uses the generic `esp32dev` board definition, the pin configuration and button logic are specific to the TTGO T-Display.
 
 ## Features
 
 *   **Wireless Message Display:** Receives text data over a BLE UART service and displays it on the screen.
 *   **Message History:** Keeps a history of the last 20 messages, allowing you to scroll back and forth.
-*   **Auto-scrolling for long messages:** Messages that are too long to fit on the screen will automatically scroll.
+*   **Auto-scrolling:** Messages that are too long to fit on the screen will automatically scroll vertically.
 *   **Dynamic User Interface:**
     *   A persistent header displays critical status information: BLE connection status (green/red), battery level, and the current screen name.
     *   Message text automatically resizes to best fit the display area.
@@ -27,40 +36,41 @@ This project transforms a TTGO T-Display ESP32 board into a versatile, portable 
 
 ## How to Use
 
-The interface is controlled using the two buttons on the TTGO board: **Button 1 (Bottom/Right)** and **Button 2 (Top/Left)**. The button functions change based on the current screen.
+The interface is controlled using the two onboard buttons. Their function changes based on the current screen.
 
-### Main Menu
-*   **Nxt-> (Button 1):** Cycles through the menu options (Messages, Settings, Info).
-*   **Sel-> (Button 2):** Enters the selected menu page.
+| Screen | Button 1 (Bottom/Right) | Button 2 (Top/Left) | Long Press (Either) |
+| :--- | :--- | :--- | :--- |
+| **Main Menu** | `Nxt->` (Cycle options) | `Sel->` (Select option) | - |
+| **Messages** | `Next->` (Next message) | `Prev->` (Previous message) | Return to Menu |
+| **Settings** | `Nxt->` (Cycle settings) | `Sel->` (Enter sub-menu) | - |
+| **Settings Sub-Menu** | `Nxt->` (Cycle values) | `Sel->` (Save and exit) | - |
+| **Info Page** | Return to Menu | Return to Menu | - |
 
-### Messages Page
-*   **Next-> (Button 1):** Displays the next message in the history.
-*   **Prev-> (Button 2):** Displays the previous message in the history.
-*   **Hold Either Button:** A long press on either button will return you to the Main Menu.
-*   If no messages have been received, pressing any button will return you to the Main Menu.
-
-### Settings Menu
-*   **Nxt-> (Button 1):** Cycles through the available settings (e.g., Brightness, Auto Standby).
-*   **Sel-> (Button 2):** Enters the sub-menu for the selected setting.
-
-#### In a Sub-Menu (e.g., Brightness):
-*   **Nxt-> (Button 1):** Cycles through the available options (e.g., 10%, 20%, 30%). The setting is applied immediately.
-*   **Sel-> (Button 2):** Exits the sub-menu and returns to the main settings list. Your last selected option is saved.
-
-### Info Page
-*   Displays credits and project information.
-*   Pressing any button will return you to the Main Menu.
+---
 
 ## Smart Text Commands
 
 The device supports special "Smart Text" commands to perform actions beyond just displaying text. All commands are prefixed with a `#`.
 
-*   **`#`**: Clears the current message from the screen.
-*   **`#CARDS`**: This command prepares the device to receive a playing card code on the next line.
-    *   The code is a 2 or 3-digit number that specifies the card.
-    *   **2-digit codes:** The first digit represents the card number (1-9, where 1 is Ace), and the second digit represents the suit (1: Spades, 2: Hearts, 3: Clubs, 4: Diamonds).
-    *   **3-digit codes:** The first two digits represent the card (10: 10, 11: Jack, 12: Queen, 13: King), and the third digit represents the suit.
-    *   Example: Sending `#CARDS` followed by `122` on the next line will display "Queen of Hearts".
+| Command | Description | Example |
+| :--- | :--- | :--- |
+| `#` | Clears the current message from the screen. | Send `#` |
+| `#CARDS` | Prepares the device to display a playing card sent on the next line. | Send `#CARDS`, then send `122` to display "Queen of Hearts". |
+
+### Card Code Format
+The card code is a 2 or 3-digit number.
+
+*   **Card Value:**
+    *   `1` - `9`: Ace - 9
+    *   `10`: 10
+    *   `11`: Jack
+    *   `12`: Queen
+    *   `13`: King
+*   **Suit Value:**
+    *   `1`: Spades (♠)
+    *   `2`: Hearts (♥)
+    *   `3`: Clubs (♣)
+    *   `4`: Diamonds (♦)
 
 ## BLE Service
 
